@@ -23,7 +23,7 @@ tests <- function(itmax,k,stopiferror) {
   fileName <- paste("data/breakpoints_k",toString(k),"it.max",toString(itmax),"stop.if.error",toString(stopiferror),".txt",sep="")
   conn <- file(fileName,open="w")
   close(conn)
-
+  
   nboot <- 0
   if (stopiferror) {
     nboot <- 5
@@ -49,6 +49,7 @@ tests <- function(itmax,k,stopiferror) {
     out.lm<-lm(y~x,data=dati)
 
     # o<-segmented(out.lm, seg.Z=~x, psi=NA, control=seg.control(it.max=100, stop.if.error=FALSE,n.boot=0))
+    
     p.value <- davies.test(out.lm,~x)$p.value
     if (p.value > 0.05) {
         x.true = x.true + 1
@@ -61,29 +62,31 @@ tests <- function(itmax,k,stopiferror) {
     
       y.mse <- mse(yy,broken.line(o,link=FALSE)$fit)
       if (y.mse > 0.0001) {
-        pdf(paste("k",toString(k),"/g0.0001/",toString(i),sep=""))
+        pdf(paste("k",toString(k),"true/g0.0001/",toString(i),sep=""))
       } else {
-        pdf(paste("k",toString(k),"/le0.0001/",toString(i),sep=""))
+        pdf(paste("k",toString(k),"true/le0.0001/",toString(i),sep=""))
       }
       plot(xx,yy)
       points(o)
       lines(xx,broken.line(o,link=FALSE)$fit,col="red",type="l",lwd=3)
       dev.off()
-
+      
       slopes<-slope(o)$x[,1]
       breakpoints<-o$psi[,2]
       # print(breakpoints)
+      
       p.value <- davies.test(out.lm,~x,values=breakpoints)$p.value
       if (p.value > 0.05) {
-        pdf(paste("k",toString(k),"/accept/",toString(i),sep=""))
+        pdf(paste("k",toString(k),"true/accept/",toString(i),sep=""))
         vector.p.value <- c(vector.p.value,0)
       } else {
-        pdf(paste("k",toString(k),"/reject/",toString(i),sep=""))
+        pdf(paste("k",toString(k),"true/reject/",toString(i),sep=""))
         vector.p.value <- c(vector.p.value,1)
       }
       vector.mse <- c(vector.mse, y.mse)
       plot(xx,yy)
-      abline(v=breakpoints)
+      points(o)
+      lines(xx,broken.line(o,link=FALSE)$fit,col="red",type="l",lwd=3)
       dev.off()
       
       write(format(y.mse, scientific = FALSE), file = fileName, append = TRUE)
@@ -93,8 +96,9 @@ tests <- function(itmax,k,stopiferror) {
       # print(paste("MY_WARNING:  ",w))
       warnings()
     }, error = function(e) {
-      # print(paste("MY_ERROR:  ",e))
-      pdf(paste("k",toString(k),"/error_it.max",toString(itmax),"_stopiferror",toString(stopiferror),"_",toString(i),sep=""))
+      print(paste("MY_ERROR:  ",e))
+      
+      pdf(paste("k",toString(k),"true/error_it.max",toString(itmax),"_stopiferror",toString(stopiferror),"_",toString(i),sep=""))
       plot(xx,yy)
       write("0\n0\n0",file = fileName,append = TRUE)
       dev.off()
@@ -119,7 +123,7 @@ tests <- function(itmax,k,stopiferror) {
   method = "pearson")
 }
 
-tests(100,3,FALSE)
+# tests(100,3,FALSE)
 # [1] 16
 # [1] 946
 # [1] 87
@@ -127,17 +131,14 @@ tests(100,3,FALSE)
 # [1] -0.02208008
 
 
-tests(100,5,FALSE)
+# tests(100,5,FALSE)
 # [1] 5
 # [1] 346
 # [1] 87
 # [1] 9913
 # [1] -0.01375302
 
-
-# tests(100,6,FALSE)
-
-tests(100,4,FALSE)
+# tests(100,4,FALSE)
 # [1] 4
 # [1] 570
 # [1] 87
@@ -147,7 +148,7 @@ tests(100,4,FALSE)
 # tests(500,4,FALSE)
 # tests(300,4,FALSE)
 
-# tests(100,4,TRUE)
+tests(100,4,TRUE)
 # tests(500,4,TRUE)
 # tests(300,4,TRUE)
 
@@ -175,3 +176,5 @@ tests(100,4,FALSE)
 # 0.000075 0.000160
 # data/breakpoints_k6it.max100stop.if.errorFALSE.txt
 # 0.000076 0.000270
+
+

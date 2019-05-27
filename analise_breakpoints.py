@@ -1,196 +1,172 @@
+# library(plot3D)
+
+# fileName <- "data/breakpoints_k4it.max100stop.if.errorFALSE.txt"
+# conn <- file(fileName,open="r")
+# linn <-readLines(conn)
+
+# slopes <- c()
+# breakpoints <- c()
+
+# for (i in seq(1,length(linn),by=3)){
+#     error_i <- as.numeric(linn[i])
+#     if(error_i == 0){
+#         next
+#     }
+#     slopes_i <- as.numeric(strsplit(linn[i+1],' ')[[1]])
+#     breakpoints_i <- as.numeric(strsplit(linn[i+2],' ')[[1]])
+#     slopes <- c(slopes, slopes_i)
+#     breakpoints <- c(breakpoints, list(breakpoints_i))
+# }
+
+# close(conn)
+
+# breakpoints2intervals <- function(x) {
+#     interval_xs <- c()
+#     interval_xs <- c(interval_xs,x[[1]][1])
+    
+#     for (i in seq(1,length(x[[1]])-1)){
+#         d <- x[[1]][i+1]-x[[1]][i]
+#         interval_xs <- c(interval_xs,d)
+#     }
+#     d <- 1-x[[1]][length(x[[1]])]
+#     interval_xs <- c(interval_xs,d)
+
+#     return(interval_xs)
+# }
+
+# intervals <- c()
+# for(i in seq(1,length(breakpoints))){
+#     intervals <- c(intervals,breakpoints2intervals(breakpoints[i]))
+# }
+
+# print(length(slopes[1:100]))
+# print(length(intervals[1:100]))
+
+# z <- table(slopes[1:1000],intervals[1:1000])
+
+# hist3D(z=z, border="black")
+
+# # heatmap:
+# image2D(z=z, border="black")
+
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import matplotlib.pyplot as plt
-import scipy
-import pdb
-import PCA
+from collections import defaultdict
 
-plt.ion()
+def read_file(samples_breakpoints='data/breakpoints_k4it.max100stop.if.errorFALSE.txt'):
+    samples_breakpoints = open(samples_breakpoints,'r').read().split('\n')[:-1]
+    total_series = len(samples_breakpoints)
+    
+    slopes = []
+    breakpoints = []
+    for i in range(0,total_series,3):
+        error = float(samples_breakpoints[i])
+        if error == 0:
+            continue
+        slopes_i = [float(n) for n in samples_breakpoints[i+1].split(' ')]
+        breakpoints_i = [float(n) for n in samples_breakpoints[i+2].split(' ')]
 
-def readBreakpoints(fileName):
-	'''Read breakpoints file calculated in the R program'''
+        slopes.append(slopes_i)
+        breakpoints.append(breakpoints_i)
+    
+    return slopes,breakpoints
 
-	fd = open(fileName, 'r')
-	dataStr = fd.readlines()
-	fd.close()
+def breakpoints2intervals(x):
+    intervals = [x[0]]
+    for i in range(len(x)-1):
+        intervals.append(x[i+1]-x[i])
+    intervals.append(1-x[-1])
+    return intervals
 
-	breakpoints = []
-	for lineIndex in range(0, len(dataStr), 3):
-		seriesIndex = int(dataStr[lineIndex])
-		slopesStr = dataStr[lineIndex+1]
-		xBreakStr = dataStr[lineIndex+2]
-		
-		slopes = np.float_(slopesStr.strip().split(' '))
-		
-		breaks = xBreakStr.strip()
-		if len(breaks)>0:
-			xBreak = np.float_(breaks.split(' '))
-		else:
-			xBreak = []
-		
-		breakpoints.append((seriesIndex, slopes, xBreak))	
-	
-	return breakpoints
-	
-def calculateBreakProps(breakpoints, data):
-	'''Calculate breakpoint properties'''
-	
-	numBreakp = np.zeros(len(breakpoints))
-	avgInterv = np.zeros(len(breakpoints))
-	avgPearson = np.zeros(len(breakpoints))
-	seriesDuration = np.zeros(len(breakpoints))
-	intervList = []
-	pearsonList = []
-	xBreakNormList = []
+def flatten(X):
+    y = []
+    for x in X:
+        y += x
+    return y
 
-	for i in range(len(breakpoints)):
+def plot_hist(x,y,labelx,labely,nx,ny):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
 
-		seriesIndex = breakpoints[i][0]
-		xBreak = breakpoints[i][2]
-		time = data[seriesIndex][0]
-		views = data[seriesIndex][1]
-		xBreakInd = np.zeros(len(xBreak)+2, dtype=np.int)
-		for j,x in enumerate(xBreak):
-			ind = np.argmin(np.abs(x-time))
-			xBreakInd[j+1] = ind
-		xBreakInd[-1] = len(views)-1
+    min_x = min(x)
+    max_x = max(x)
+    min_y = min(y)
+    max_y = max(y)
 
-		xBreakNorm = (xBreak - time[0]) / (time[-1] - time[0])
-		#xBreakNormInd = [0] + list(np.round(xBreakNorm / dt).astype(int)) + [binsTime.size]
-		#timeSpentOnSlope = np.diff(xBreakNormInd)
-		
-		numBreakp[i] = len(xBreak) #
-		xBreakAugment = [time[0]] + list(xBreak) + [time[-1]]
-		interv = np.diff(xBreakAugment)/(time[-1]-time[0])
-		intervList.extend(interv) #
-		avgInterv[i] = np.mean(interv) #
-		pearson = []
-		for j in range(len(xBreakInd)-1):
-			t = time[xBreakInd[j]:xBreakInd[j+1]]
-			v = views[xBreakInd[j]:xBreakInd[j+1]]
-			if len(t)>1:
-				pearson.append(np.corrcoef(t, v)[0][1])
-		pearsonList.extend(pearson)	 #
-		avgPearson[i] = np.mean(pearson) #
+    hist, xedges, yedges = np.histogram2d(x, y, bins=[nx,ny], range=[[min_x, max_x], [min_y, max_y]])
 
-		seriesDuration[i] = time[-1]-time[0]
-		xBreakNormList.append(xBreakNorm)
+    # Construct arrays for the anchor positions of the 16 bars.
+    xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
+    xpos = xpos.ravel()
+    ypos = ypos.ravel()
+    zpos = 0
 
-	return numBreakp, avgInterv, avgPearson, intervList, pearsonList, seriesDuration, xBreakNormList
-	
+    # Construct arrays with the dimensions for the 16 bars.
+    dx = (max_x-min_x)/nx
+    dy = (max_y-min_y)/ny
+    dz = hist.ravel()
 
-fd = open('data/series.txt', 'r')
-dataStr = fd.readlines()
-fd.close()
+    ax.bar3d(xpos, ypos, zpos, dx, dy, dz, zsort='average',edgecolors='white')
 
-data = []
-for lineIndex in range(0, len(dataStr), 2):
-	timeStr = dataStr[lineIndex]
-	viewsStr = dataStr[lineIndex+1]
-	
-	time = np.float_(timeStr.strip().split(','))
-	views = np.int_(viewsStr.strip().split(','))
-	
-	data.append((time, views))
-	
-inds = np.random.permutation(len(data))[:200]	
-fig = plt.figure(figsize=[12, 8])	
-for i in range(200):
-	ax = plt.subplot(10, 20, i+1)
-	time, views = data[inds[i]]
-	plt.plot(time-time[0], np.gradient(views))
-	#lt.plot([0, time[-1]-time[0]], [0, views[-1]], 'k', lw=1, c='0.75')
-	ax.xaxis.set_visible(False)
-	ax.yaxis.set_visible(False)
-plt.tight_layout()	
-	
-breakpoints = readBreakpoints('data/merged_breakpoints.txt')
+    plt.xlabel(labelx)
+    plt.ylabel(labely)
+    plt.show()
 
-meas = calculateBreakProps(breakpoints, data)
-numBreakp, avgInterv, avgPearson, intervList, pearsonList, seriesDuration, xBreakNormList = meas
+    plt.imshow(hist, cmap='hot', interpolation='nearest')
+    plt.xticks(range(0,nx),[str(f)[:4] for f in xedges])
+    plt.yticks(range(0,ny),[str(f)[:4] for f in yedges])
+    plt.xlabel(labelx)
+    plt.ylabel(labely)
+    plt.show()
 
-	
-bins = np.arange(np.min(numBreakp), np.max(numBreakp)+2)
-plt.figure()
-plt.subplot(2, 3, 1)
-plt.hist(numBreakp, bins)
-plt.xlabel('Number of breakpoints')
+def calculate_cond_xi_xi1(X,intervalsx,var):
+    prob_xi = defaultdict(lambda:0)
+    prob_xi1 = defaultdict(lambda:defaultdict(lambda:0))
+    total = 0
+    for x in X:
+        for i in range(len(x)):
+            total += 1
+            for j in range(len(intervalsx)-1):
+                if x[i] >= intervalsx[j] and x[i] < intervalsx[j+1]:
+                    prob_xi[j] += 1
+                    if i+1 < len(x):
+                        for k in range(len(intervalsx)-1):
+                            if x[i+1] >= intervalsx[k] and x[i+1] < intervalsx[k+1]:
+                                prob_xi1[j][k] += 1
+                
+    for i,p in prob_xi.items():
+        if p > 0:
+            print("p(%.4f<=%si<%.4f)=%.4f" % (intervalsx[i],var,intervalsx[i+1],p/total))
 
-plt.subplot(2, 3, 2)
-plt.hist(intervList, 20)
-plt.xlabel('Transition interval')
+    for i,prob in prob_xi1.items():
+        total = prob_xi[i]
+        for j,p in prob.items():
+            if p > 0:
+                print("p(%.4f<=%si<%.4f|%.4f<=Xi+1<%.4f)=%.4f" % (intervalsx[i],var,intervalsx[i+1],intervalsx[j],intervalsx[j+1],p/total))
+    print()
 
-plt.subplot(2, 3, 3)
-plt.hist(avgInterv, 20)
-plt.xlabel('Avg. transition interval')
+def probabilities(X,Y,nx,ny):
+    minx,maxx = min(flatten(X)),max(flatten(X))
+    miny,maxy = min(flatten(Y)),max(flatten(Y))
 
-plt.subplot(2, 3, 4)
-plt.hist(pearsonList, 20)
-plt.xlabel('Pearson corr.')
+    deltax = (maxx-minx)/nx
+    deltay = (maxy-miny)/ny
 
-plt.subplot(2, 3, 5)
-plt.hist(avgPearson, 20)
-plt.xlabel('Avg. Pearosn corr.')
+    intervalsx = np.arange(minx,maxx+deltax,deltax)
+    intervalsy = np.arange(miny,maxy+deltay,deltay)
 
-all_breakNorm = [v for breakNorm in xBreakNormList for v in breakNorm]
-bins = np.linspace(0, 1, 50) #np.linspace(min(all_breakNorm), max(all_breakNorm), 50)
-cumulativeHist = np.zeros(len(bins)-1)
-for breakNorm in all_breakNorm:
-	hist, _ = np.histogram(breakNorm, bins)
-	cumulativeHist += hist
+    calculate_cond_xi_xi1(X,intervalsx,'X')
+    calculate_cond_xi_xi1(Y,intervalsy,'Y')
 
+slopes,breakpoints = read_file()
+intervals = [breakpoints2intervals(b) for b in breakpoints]
+slopes = [(np.arctan(s)*57.2958).tolist() for s in slopes]
 
-allSlopes = [slope for series in breakpoints for slope in series[1]]
-allSlopes = np.log(allSlopes)
-#allTimes = [t for series in data for t in series[0]]
-#dt = 1/12.
-binsSlopes = np.linspace(min(allSlopes), max(allSlopes), 30)
-dSlope = binsSlopes[1] - binsSlopes[0]
-minSlope = min(allSlopes)
-#binsTime = np.arange(min(allTimes)-dt/2., max(allTimes)+dt/2+0.1*dt, dt)
-binsTime = np.linspace(0, 1, 100)
-dt = binsTime[1]-binsTime[0]
-allSlopeArr = []
-for i in range(len(breakpoints)):
+nx = 5
+ny = 5
+probabilities(slopes,intervals,nx,ny)
 
-	seriesIndex = breakpoints[i][0]
-	slopes = np.log(breakpoints[i][1])
-	xBreak = breakpoints[i][2]
-	time = data[seriesIndex][0]
-	views = data[seriesIndex][1]
-	xBreakInd = np.zeros(len(xBreak)+2, dtype=np.int)
-	for j,x in enumerate(xBreak):
-		ind = np.argmin(np.abs(x-time))
-		xBreakInd[j+1] = ind
-	xBreakInd[-1] = len(views)-1	
-
-	xBreakNorm = (xBreak-time[0])/(time[-1]-time[0])
-	xBreakNormInd = [0] + list(np.round(xBreakNorm/dt).astype(int)) + [binsTime.size]
-	timeSpentOnSlope = np.diff(xBreakNormInd)
-	
-	slopeArr = np.zeros(len(binsSlopes))
-	for j in range(len(slopes)):
-		indSlope = np.round((slopes[j]-minSlope)/dSlope).astype(int)
-		slopeArr[indSlope] += timeSpentOnSlope[j]
-
-	allSlopeArr.append(slopeArr)
-
-allSlopeArr = np.array(allSlopeArr)
-Y, D, W = PCA.PCA(allSlopeArr, 2, useCov=True)	
-E = 100*D/sum(D)
-plt.figure()
-plt.plot(Y[:,0], Y[:,1], 'o', ms=1, alpha=0.3)
-plt.xlabel(r'$C_1\;(%.1f\%%)$'%E[0])
-plt.ylabel(r'$C_2\;(%.1f\%%)$'%E[0])
-
-
-# Plot breakpoints
-# i = len(breakpoints)-1
-# seriesIndex = breakpoints[i][0]
-# xBreak = breakpoints[i][2]
-# time = data[seriesIndex][0]
-# views = data[seriesIndex][1]
-# plt.figure()
-# plt.plot(time, views, 'b-')	
-# ylim = plt.ylim()
-# plt.vlines(xBreak, ylim[0], ylim[1])
-# plt.show()	
+# slopes = flatten(slopes)
+# intervals = flatten(intervals)
+# plot_hist(slopes,intervals,'slopes','intervals',nx=nx,ny=nx)
