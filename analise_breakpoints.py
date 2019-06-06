@@ -1,60 +1,10 @@
-# library(plot3D)
-
-# fileName <- "data/breakpoints_k4it.max100stop.if.errorFALSE.txt"
-# conn <- file(fileName,open="r")
-# linn <-readLines(conn)
-
-# slopes <- c()
-# breakpoints <- c()
-
-# for (i in seq(1,length(linn),by=3)){
-#     error_i <- as.numeric(linn[i])
-#     if(error_i == 0){
-#         next
-#     }
-#     slopes_i <- as.numeric(strsplit(linn[i+1],' ')[[1]])
-#     breakpoints_i <- as.numeric(strsplit(linn[i+2],' ')[[1]])
-#     slopes <- c(slopes, slopes_i)
-#     breakpoints <- c(breakpoints, list(breakpoints_i))
-# }
-
-# close(conn)
-
-# breakpoints2intervals <- function(x) {
-#     interval_xs <- c()
-#     interval_xs <- c(interval_xs,x[[1]][1])
-    
-#     for (i in seq(1,length(x[[1]])-1)){
-#         d <- x[[1]][i+1]-x[[1]][i]
-#         interval_xs <- c(interval_xs,d)
-#     }
-#     d <- 1-x[[1]][length(x[[1]])]
-#     interval_xs <- c(interval_xs,d)
-
-#     return(interval_xs)
-# }
-
-# intervals <- c()
-# for(i in seq(1,length(breakpoints))){
-#     intervals <- c(intervals,breakpoints2intervals(breakpoints[i]))
-# }
-
-# print(length(slopes[1:100]))
-# print(length(intervals[1:100]))
-
-# z <- table(slopes[1:1000],intervals[1:1000])
-
-# hist3D(z=z, border="black")
-
-# # heatmap:
-# image2D(z=z, border="black")
-
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import matplotlib.pyplot as plt
 from collections import defaultdict
+from scipy.stats import pearsonr
 
-def read_file(samples_breakpoints='data/breakpoints_k4it.max100stop.if.errorFALSE.txt'):
+def read_file(samples_breakpoints='data/breakpoints_k4it.max100stop.if.errorFALSE.txt',n=4):
     samples_breakpoints = open(samples_breakpoints,'r').read().split('\n')[:-1]
     total_series = len(samples_breakpoints)
     
@@ -66,11 +16,13 @@ def read_file(samples_breakpoints='data/breakpoints_k4it.max100stop.if.errorFALS
             continue
         slopes_i = [float(n) for n in samples_breakpoints[i+1].split(' ')]
         breakpoints_i = [float(n) for n in samples_breakpoints[i+2].split(' ')]
+        # breakpoints_i.append(1.0)
 
-        slopes.append(slopes_i)
-        breakpoints.append(breakpoints_i)
+        if len(slopes_i) == n:
+            slopes.append(np.asarray(slopes_i))
+            breakpoints.append(np.asarray(breakpoints_i))
     
-    return slopes,breakpoints
+    return np.asarray(slopes),np.asarray(breakpoints)
 
 def breakpoints2intervals(x):
     intervals = [x[0]]
@@ -79,94 +31,253 @@ def breakpoints2intervals(x):
     intervals.append(1-x[-1])
     return intervals
 
-def flatten(X):
-    y = []
+def sub_plot_hist(hist,xedges,yedges,labelx,labely,nx,ny,fig_hist,fig_heat,idx,deltax,deltay):
+    if fig_hist:
+        ax = fig_hist.add_subplot(5,1,idx, projection='3d')
+
+        # Construct arrays for the anchor positions of the 16 bars.
+        xpos, ypos = np.meshgrid(yedges + 0.25, xedges + 0.25, indexing="ij")
+        xpos = xpos.ravel()
+        ypos = ypos.ravel()
+        zpos = 0
+
+        # Construct arrays with the dimensions for the 16 bars.
+        dx = deltay
+        dy = deltax
+        dz = hist.ravel()
+
+        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, zsort='average',edgecolors='white')
+
+        ax.set_xlabel(labely)
+        ax.set_ylabel(labelx)
+
+    if fig_heat:    
+        ax = fig_heat.add_subplot(5,1,idx)
+        ax.imshow(hist, cmap='hot', interpolation='nearest',extent=(0,nx,nx,0))
+        ax.set_xticks(range(nx))
+        ax.set_xticklabels([str(f)[:4] for f in xedges],rotation=60)
+        ax.set_yticks(range(nx))
+        ax.set_yticklabels([str(f)[:4] for f in yedges])
+        ax.set_xlabel(labelx)
+        ax.set_ylabel(labely)
+    
+def plot_xi_xi1(X,idx,fig):
+    pointx = []
+    pointy = []
     for x in X:
-        y += x
-    return y
+        for i in range(len(x)-1):
+            pointx.append(x[i])
+            pointy.append(x[i+1])
+    pearson,_ = pearsonr(pointx,pointy)
+    ax = fig.add_subplot(5,1,idx)
+    ax.scatter(pointx,pointy,alpha=0.3)
+    ax.title.set_text(str(idx) + ' (pearson=' + str(pearson)[:9]+')')
 
-def plot_hist(x,y,labelx,labely,nx,ny):
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    min_x = min(x)
-    max_x = max(x)
-    min_y = min(y)
-    max_y = max(y)
-
-    hist, xedges, yedges = np.histogram2d(x, y, bins=[nx,ny], range=[[min_x, max_x], [min_y, max_y]])
-
-    # Construct arrays for the anchor positions of the 16 bars.
-    xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing="ij")
-    xpos = xpos.ravel()
-    ypos = ypos.ravel()
-    zpos = 0
-
-    # Construct arrays with the dimensions for the 16 bars.
-    dx = (max_x-min_x)/nx
-    dy = (max_y-min_y)/ny
-    dz = hist.ravel()
-
-    ax.bar3d(xpos, ypos, zpos, dx, dy, dz, zsort='average',edgecolors='white')
-
-    plt.xlabel(labelx)
-    plt.ylabel(labely)
-    plt.show()
-
-    plt.imshow(hist, cmap='hot', interpolation='nearest')
-    plt.xticks(range(0,nx),[str(f)[:4] for f in xedges])
-    plt.yticks(range(0,ny),[str(f)[:4] for f in yedges])
-    plt.xlabel(labelx)
-    plt.ylabel(labely)
-    plt.show()
-
-def calculate_cond_xi_xi1(X,intervalsx,var):
+def calculate_cond_xi_xi1(X,intervalsx):
     prob_xi = defaultdict(lambda:0)
     prob_xi1 = defaultdict(lambda:defaultdict(lambda:0))
-    total = 0
+    
     for x in X:
-        for i in range(len(x)):
-            total += 1
-            for j in range(len(intervalsx)-1):
-                if x[i] >= intervalsx[j] and x[i] < intervalsx[j+1]:
-                    prob_xi[j] += 1
-                    if i+1 < len(x):
-                        for k in range(len(intervalsx)-1):
-                            if x[i+1] >= intervalsx[k] and x[i+1] < intervalsx[k+1]:
-                                prob_xi1[j][k] += 1
-                
-    for i,p in prob_xi.items():
-        if p > 0:
-            print("p(%.4f<=%si<%.4f)=%.4f" % (intervalsx[i],var,intervalsx[i+1],p/total))
-
+        for j in range(len(intervalsx)-1):
+            if x[0] >= intervalsx[j] and x[0] < intervalsx[j+1]:
+                prob_xi[j] += 1
+                for k in range(len(intervalsx)-1):
+                    if x[1] > intervalsx[k] and x[1] <= intervalsx[k+1]:
+                        prob_xi1[j][k] += 1
     for i,prob in prob_xi1.items():
         total = prob_xi[i]
-        for j,p in prob.items():
-            if p > 0:
-                print("p(%.4f<=%si<%.4f|%.4f<=Xi+1<%.4f)=%.4f" % (intervalsx[i],var,intervalsx[i+1],intervalsx[j],intervalsx[j+1],p/total))
-    print()
+        for j in prob.keys():
+            prob[j] = prob[j]/total
+    return prob_xi1
 
-def probabilities(X,Y,nx,ny):
-    minx,maxx = min(flatten(X)),max(flatten(X))
-    miny,maxy = min(flatten(Y)),max(flatten(Y))
+def plot_hist(X,intervalsx,nx,fig_hist,fig_heat,idx):
+    
+    prob_xi_xi1 = calculate_cond_xi_xi1(X,intervalsx)
+    
+    hist = np.zeros((len(intervalsx),len(intervalsx)))
+    for j,ps in prob_xi_xi1.items():
+        for k,p in ps.items():
+            hist[j][k] = p
 
+    sub_plot_hist(hist,intervalsx,intervalsx,'x','x+1',nx,nx,fig_hist,fig_heat,idx,deltax,deltax)
+    return prob_xi_xi1,fig_hist,fig_heat
+
+def get_i(V,intervals):
+    idxs = []
+    for v in V:
+        for k in range(len(intervals)-1):
+            if v > intervals[k] and v <= intervals[k+1]:
+                idxs.append(k)
+                break
+    idxs = np.asarray(idxs)
+    return idxs
+
+def plot_intervals_slopes(n=4):
+    # PARA HISTOGRAMA DO SLOPE POR INTERVAL
+    fig_hist = plt.figure(figsize=(5,20))
+    fig_heat = plt.figure(figsize=(5,20))
+    for i in range(n):
+        slopes_i = slopes[:,i]
+        intervals_i = intervals[:,i]
+        slopes_i = get_i(slopes_i,intervalsx)
+        intervals_i = get_i(intervals_i,intervalsy)
+        
+        hist = np.zeros((len(intervalsx),len(intervalsy)))
+        for x,y in zip(slopes_i,intervals_i):
+            hist[x][y] += 1
+        print(hist)
+        sub_plot_hist(hist,intervalsy,intervalsx,'intervals'+str(i),'slopes'+str(i),nx,ny,fig_hist,fig_heat,i+1,deltay,deltax)
+    fig_hist.tight_layout()
+    fig_hist.savefig('slope_interval_hist.pdf',format='pdf')
+    fig_heat.tight_layout()
+    fig_heat.savefig('slope_interval_heat.pdf',format='pdf')
+
+def plots():
+    fig_slopes = plt.figure(figsize=(5,15))
+    fig_intervals = plt.figure(figsize=(5,15))
+    fig_slopes_intervals = plt.figure(figsize=(5,15))
+    fig_intervals_slopes = plt.figure(figsize=(5,15))
+    fig_hist_slopes = plt.figure(figsize=(5,10))
+    fig_heat_slopes = plt.figure(figsize=(5,10))
+
+    for i in range(3):
+        slopes_i = slopes[:,i:i+2]
+        plot_xi_xi1(slopes_i,i+1,fig_slopes)
+        
+        intervals_i = intervals[:,i:i+2]
+        plot_xi_xi1(intervals_i,i+1,fig_intervals)
+        
+        slopes_i_intervals_i1 = np.concatenate((slopes[:,i:i+1],intervals[:,i+1:i+2]),axis=1)
+        plot_xi_xi1(slopes_i_intervals_i1,i+1,fig_slopes_intervals)
+        
+        intervals_i_slopes_i1 = np.concatenate((intervals[:,i:i+1],slopes[:,i+1:i+2]),axis=1)
+        plot_xi_xi1(intervals_i_slopes_i1,i+1,fig_intervals_slopes)
+        
+        plot_hist(slopes_i,intervalsx,nx,fig_hist_slopes,fig_heat_slopes,i+1)
+
+    fig_slopes.suptitle('slopes')
+    fig_slopes.savefig("slopes.pdf",format='pdf',bbox_inches='tight')
+
+    fig_slopes.suptitle('intervals')
+    fig_intervals.savefig("intervals.pdf",format='pdf',bbox_inches='tight')
+
+    fig_slopes_intervals.suptitle('x(i) is slope, y(i+1) is interval')
+    fig_slopes_intervals.savefig("slopes_intervals.pdf",format='pdf',bbox_inches='tight')
+
+    fig_intervals_slopes.suptitle('x(i) is interval, y(i+1) is slope')
+    fig_intervals_slopes.savefig("intervals_slopes.pdf",format='pdf',bbox_inches='tight')
+
+    fig_hist_slopes.tight_layout()
+    fig_hist_slopes.suptitle('P(x+1|x), x is slope')
+    fig_hist_slopes.savefig("hist_slopes.pdf",format='pdf',bbox_inches='tight')
+
+    fig_heat_slopes.tight_layout()
+    fig_heat_slopes.suptitle('P(x+1|x), x is slope', y=1.08)
+    fig_heat_slopes.savefig("heat_slopes.pdf",format='pdf',bbox_inches='tight')
+
+def get_prob(X,intervalsx):
+    x_by_i = defaultdict(lambda:[])
+    idxs = get_i(X,intervalsx)
+    for i,x in zip(idxs,X):
+        x_by_i[i].append(x)
+    unique,count = np.unique(idxs,return_counts=True)
+    prob = defaultdict(lambda:0)
+    total = len(idxs)
+    for u,c in zip(unique,count):
+        prob[u] = c/total
+    return x_by_i,prob
+
+def get_slope_val(nx,prob_slope1,x_by_i):
+    prob = np.zeros(nx)
+    for k,p in prob_slope1.items():
+        prob[k] = p
+    slopei = np.random.choice(np.arange(nx), p=prob)
+    to_select = x_by_i[slopei]
+    slopeiv = np.random.randint(0,len(to_select))
+    slopev = to_select[slopeiv]
+    return slopev,slopei
+
+def generate_artificial_series(n,prob_slope1,prob_cond,x_by_i):
+    series = []
+    for _ in range(n):
+        slope_artificial = np.zeros(4)
+        slope_artificial[0],slope0_i = get_slope_val(nx,prob_slope1,x_by_i[0])
+
+        prob = prob_cond[0][slope0_i]
+        slope_artificial[1],slope1_i = get_slope_val(nx,prob,x_by_i[1])
+        
+        prob = prob_cond[1][slope1_i]
+        slope_artificial[2],slope2_i = get_slope_val(nx,prob,x_by_i[2])
+        
+        prob = prob_cond[2][slope2_i]
+        slope_artificial[3],_ = get_slope_val(nx,prob,x_by_i[3])
+        
+        series.append(slope_artificial)
+    return series
+
+def save(series_slopes,series_intervals,filename):
+    f = open(filename,'w')
+    for s,i in zip(series_slopes,series_intervals):
+        f.write('-1\n')
+        to_str = ''
+        for v in s:
+            to_str += str(v)+' '
+        f.write(to_str[:-1]+"\n")
+        to_str = ''
+        for v in i:
+            to_str += str(v)+' '
+        f.write(to_str[:-1]+"\n")
+    f.close()
+
+def artificial_series(slopes,intervalsx):
+    x_by_i = [0,0,0,0]
+    x_by_i[0],prob_slope1 = get_prob(slopes[:,0],intervalsx)
+    x_by_i[1],_ = get_prob(slopes[:,1],intervalsx)
+    x_by_i[2],_ = get_prob(slopes[:,2],intervalsx)
+    x_by_i[3],_ = get_prob(slopes[:,3],intervalsx)
+    
+    prob_cond = []
+    prob_cond.append(calculate_cond_xi_xi1(slopes[:,0:2],intervalsx))
+    prob_cond.append(calculate_cond_xi_xi1(slopes[:,1:3],intervalsx))
+    prob_cond.append(calculate_cond_xi_xi1(slopes[:,2:4],intervalsx))
+
+    series_slopes = generate_artificial_series(1000,prob_slope1,prob_cond,x_by_i)
+    
+    return series_slopes
+
+if __name__ == "__main__":
+    slopes,breakpoints = read_file(n=4)
+    intervals = np.asarray([np.asarray(breakpoints2intervals(b)) for b in breakpoints])
+    slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
+
+    '''
+    ls = []
+    for x in slopes:
+        ls.append(len(x))
+    unique,count = np.unique(ls,return_counts=True)
+    for u,c in zip(unique,count):
+        print(u,c)
+    '''
+
+    nx = 10
+    ny = 10
+
+    minx,maxx = 0,90
     deltax = (maxx-minx)/nx
-    deltay = (maxy-miny)/ny
-
     intervalsx = np.arange(minx,maxx+deltax,deltax)
+
+    miny,maxy = 0,1
+    deltay = (maxy-miny)/ny
     intervalsy = np.arange(miny,maxy+deltay,deltay)
+    
+    # plots()
+    # mean_interval = np.mean(intervals.flatten())
+    # artificial_series(slopes,intervalsx,mean_interval)
 
-    calculate_cond_xi_xi1(X,intervalsx,'X')
-    calculate_cond_xi_xi1(Y,intervalsy,'Y')
-
-slopes,breakpoints = read_file()
-intervals = [breakpoints2intervals(b) for b in breakpoints]
-slopes = [(np.arctan(s)*57.2958).tolist() for s in slopes]
-
-nx = 5
-ny = 5
-probabilities(slopes,intervals,nx,ny)
-
-# slopes = flatten(slopes)
-# intervals = flatten(intervals)
-# plot_hist(slopes,intervals,'slopes','intervals',nx=nx,ny=nx)
+    mean_slopes = np.mean(slopes.flatten())
+    articifial_xs = artificial_series(intervals,intervalsy)
+    mean_slopes = [[mean_slopes]*4]*1000
+    articifial_xs = np.asarray(articifial_xs)
+    save(mean_slopes,articifial_xs,'data/artificial_intervals.txt')
+    save(mean_slopes,articifial_xs/np.sum(articifial_xs,axis=1).reshape(1000,-1),'data/artificial_intervals_norm.txt')
+    
