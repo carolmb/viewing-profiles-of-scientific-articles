@@ -6,8 +6,11 @@ from analise_breakpoints import breakpoints2intervals
 from analise_breakpoints import read_file_original
 from scipy.stats import pearsonr
 import WOSGetter
+from matplotlib import cm
+from sklearn.utils.random import sample_without_replacement
 
 def plot_pca_colors(slopes,breakpoints,colors,k):
+    colors = np.asarray(colors)
     slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
     intervals = [breakpoints2intervals(b) for b in breakpoints]
     all_data = np.concatenate((slopes,intervals),axis=1)
@@ -21,8 +24,15 @@ def plot_pca_colors(slopes,breakpoints,colors,k):
 
     y = pca.transform(all_data)
 
+    print(y.shape)
+    if len(y) > 20000:
+        idxs = sample_without_replacement(len(y),20000)
+        y = y[idxs]
+        colors = colors[idxs]
+
     plt.figure()
-    plt.scatter(y[:,0],y[:,1],c=colors,alpha=0.4)
+    cmap = cm.get_cmap('inferno', 10)
+    plt.scatter(y[:,0],y[:,1],c=colors,cmap=cmap,alpha=0.3)
     plt.title(k)
     # plt.title(title+' original std='+ str(original_std[0])[:5]+' artificial std='+str(artificial_std[0])[:5])
     # plt.xlabel('original std ='+str(original_std[1])[:5]+' artificial std='+str(artificial_std[1])[:5])
@@ -32,32 +42,17 @@ def plot_pca_colors(slopes,breakpoints,colors,k):
 
 plt.ion()
 
-completeTimeSeries = WOSGetter.GZJSONLoad("plosone2016_hits.json.gz")
+xs,ys = read_file_original(filename='data/plos_one_data_total.txt')
 
-
-completeTimeSeries = WOSGetter.GZJSONLoad("plosone2016_hits.json.gz")
-
-keys = ['total','pdf','html','xml']
-for k in keys:
-    xs,ys,cs=[],[],[]
-    for serie in completeTimeSeries:
-        data = np.asarray(serie[k])
-        years = data[:,0]
-        counts = data[:,1]
-        xs.append(years)
-        ys.append(counts)
-        cs.append(counts[-1])
-
-
-xs,ys = read_file_original()
 for n in [2,3,4,5]:
     print(n)
-    idxs,slopes,breakpoints = read_file(n=n)
+    idxs,slopes,breakpoints = read_file(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE.txt',n=n)
     xs_n = [xs[idx] for idx in idxs]
     # deltas = [1 if xs[-1]-xs[0] > 5 else 0 for xs in xs_n ]
 
     # cor por número de visualização
     deltas = [ys[idx][-1] for idx in idxs]
+    print(deltas[:10])
     q75 = np.quantile(deltas,0.75)
     q25 = np.quantile(deltas,0.25)
     iqr = q75 - q25
@@ -66,7 +61,7 @@ for n in [2,3,4,5]:
     print(deltas[:10])
 
     # cor por delta anos
-    # deltas =read_file [xs[-1]-xs[0] for xs in xs_n]
+    deltas = [xs[-1]-xs[0] for xs in xs_n]
 
     plot_pca_colors(slopes,breakpoints,deltas,n)
     # print(np.unique(delta_xs_n,return_counts=True))

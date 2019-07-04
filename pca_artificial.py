@@ -5,14 +5,18 @@ from analise_breakpoints import read_file
 from analise_breakpoints import breakpoints2intervals
 from scipy.stats import pearsonr
 from analise_breakpoints import read_file_original
+import glob
 
 def get_data(filename):
-    _,slopes_original,breakpoints_original = read_file()
-    _,slopes_artificial,intervals_artificial = read_file(samples_breakpoints=filename)
-    
+    n = int(filename.split('_')[-1].split('.txt')[0])
+    _,slopes_original,breakpoints_original = read_file(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE.txt',n=n)
+    _,slopes_artificial,intervals_artificial = read_file(samples_breakpoints=filename,n=n)
+
     slopes_original = np.asarray([(np.arctan(s)*57.2958) for s in slopes_original])
     #print(slopes_original[:1])
     intervals_original = [breakpoints2intervals(b) for b in breakpoints_original]
+
+    print(len(slopes_original),len(intervals_original))
 
     # DADOS NORMALIZADOS POR TODOS OS DADOS
     original_data = np.concatenate((slopes_original,intervals_original),axis=1)
@@ -28,7 +32,7 @@ def get_data(filename):
 
     return artificial_data,original_data,all_data
 
-def pca_fit(original,artificial,all_data,title,deltas):
+def pca_fit(original,artificial,all_data,title):
     pca = PCA(n_components=2)
     pca.fit(all_data)
 
@@ -39,42 +43,20 @@ def pca_fit(original,artificial,all_data,title,deltas):
     artificial_std = np.std(y2,axis=0)
 
     plt.figure()
-    plt.scatter(y1[:,0],y1[:,1],c=deltas,alpha=0.3)
+    plt.scatter(y1[:,0],y1[:,1],c='green',alpha=0.3)
     plt.scatter(y2[:,0],y2[:,1],c='red',alpha=0.2)
     plt.title(title+' original std='+ str(original_std[0])[:5]+' artificial std='+str(artificial_std[0])[:5])
 
     plt.xlabel('original std ='+str(original_std[1])[:5]+' artificial std='+str(artificial_std[1])[:5])
 
     plt.show()
-    plt.savefig(filename[:-4]+'_pca.png')
+    plt.savefig('imgs_python/'+filename[5:-4]+'_pca.png')
 
-xs,ys = read_file_original()
-idxs,slopes,breakpoints = read_file(n=4)
-xs_n = [xs[idx] for idx in idxs]
-deltas = [1 if xs[-1]-xs[0] > 5 else 0 for xs in xs_n ]
 
 plt.ion()
 # DADOS GERADOS PARA INTERVALOS ARTIFICIAIS (ANGULO FIXO, INTERVALO VARIANDO)
-filename = 'data/artificial_intervals.txt'
-artificial_data,original_data,all_data = get_data(filename)
-pca_fit(original_data,artificial_data,all_data,filename,deltas)
+filenames = glob.glob('data/plos_one_artificial_*.txt')
 
-# # DADOS GERADOS PARA INTERVALOS ARTIFICIAIS (ANGULO VARIANDO, INTERVALO FIXO)
-filename = 'data/artificial_slopes.txt'
-artificial_data,original_data,all_data = get_data(filename)
-pca_fit(original_data,artificial_data,all_data,filename,deltas)
-
-# INTERVALOS ARTIFICIAIS (ANGULO MÉDIO DE CADA INTERVALO)
-filename = 'data/artificial_intervals_slope_axis0.txt'
-artificial_data,original_data,all_data = get_data(filename)
-pca_fit(original_data,artificial_data,all_data,filename,deltas)
-
-# # INTERVALOS ARTIFICIAIS (ANGULO ALEATÓRIO)
-filename = 'data/artificial_intervals_slope_random.txt'
-artificial_data,original_data,all_data = get_data(filename)
-pca_fit(original_data,artificial_data,all_data,filename,deltas)
-
-# # DADOS ALEATÓRIOS
-filename = 'data/artificial_all_random.txt'
-artificial_data,original_data,all_data = get_data(filename)
-pca_fit(original_data,artificial_data,all_data,filename,deltas)
+for filename in filenames:
+    artificial_data,original_data,all_data = get_data(filename)
+    pca_fit(original_data,artificial_data,all_data,filename)

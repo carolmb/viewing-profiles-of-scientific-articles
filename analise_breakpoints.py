@@ -3,11 +3,12 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import matplotlib.pyplot as plt
 from collections import defaultdict
 from scipy.stats import pearsonr
+from sklearn.utils.random import sample_without_replacement
+from sklearn import preprocessing
 
 def read_file_original(filename='data/samples.txt'):
     samples_breakpoints = open(filename,'r').read().split('\n')[:-1]
     total_series = len(samples_breakpoints)
-    print(total_series)
     X = []
     Y = []
     for i in range(0,total_series,2):
@@ -23,7 +24,6 @@ def read_file_original(filename='data/samples.txt'):
 def read_file(samples_breakpoints='data/breakpoints_k4it.max100stop.if.errorFALSE.txt',n=4):
     samples_breakpoints = open(samples_breakpoints,'r').read().split('\n')[:-1]
     total_series = len(samples_breakpoints)
-    print(total_series)
     slopes = []
     breakpoints = []
     idxs = []
@@ -80,19 +80,25 @@ def sub_plot_hist(hist,xedges,yedges,labelx,labely,nx,ny,fig_hist,fig_heat,idx,d
         ax.set_ylabel(labely)
     
 def plot_xi_xi1(X,idx,fig,n):
-    pointx = []
-    pointy = []
-    for x in X:
-        for i in range(len(x)-1):
-            pointx.append(x[i])
-            pointy.append(x[i+1])
-    pearson,_ = pearsonr(pointx,pointy)
-    ax = fig.add_subplot(n,1,idx)
-    ax.scatter(pointx,pointy,alpha=0.3)
-    # ax.plot([0,1],[1,0],'k')
-    ax.title.set_text(str(idx) + ' (pearson=' + str(pearson)[:9]+')')
-    # ax.set_xlim((0,1))
-    # ax.set_ylim((0,1))
+	pointx = []
+	pointy = []
+	X2 = X
+	
+	if len(X) > 10000:
+		idxs = sample_without_replacement(len(X),10000)
+		X2 = X[idxs]
+	
+	for x in X2:
+		for i in range(len(x)-1):
+			pointx.append(x[i])
+			pointy.append(x[i+1])
+	pearson,_ = pearsonr(pointx,pointy)
+	ax = fig.add_subplot(n,1,idx)
+	ax.scatter(pointx,pointy,alpha=0.3)
+	# ax.plot([0,1],[1,0],'k')
+	ax.title.set_text(str(idx) + ' (pearson=' + str(pearson)[:9]+')')
+	# ax.set_xlim((0,1))
+	# ax.set_ylim((0,1))
 
 def calculate_cond_xi_xi1(X,intervalsx):
     prob_xi = defaultdict(lambda:0)
@@ -153,7 +159,7 @@ def plot_intervals_slopes(n=4):
     fig_heat.tight_layout()
     fig_heat.savefig('slope_interval_heat.pdf',format='pdf')
 
-def plots(slopes,intervals,n,intervalsx,intervalsy):
+def plots(slopes,intervals,n,intervalsx,intervalsy,header='imgs_python/'):
     fig_slopes = plt.figure(figsize=(n,3*n))
     fig_intervals = plt.figure(figsize=(n,3*n))
     fig_slopes_intervals = plt.figure(figsize=(n,3*n))
@@ -165,7 +171,7 @@ def plots(slopes,intervals,n,intervalsx,intervalsy):
 
     for i in range(n-1):
         slopes_i = slopes[:,i:i+2]
-        print(slopes_i.shape)
+        # print(slopes_i.shape)
         plot_xi_xi1(slopes_i,i+1,fig_slopes,n)
         
         intervals_i = intervals[:,i:i+2]
@@ -182,32 +188,32 @@ def plots(slopes,intervals,n,intervalsx,intervalsy):
         
 
     fig_slopes.suptitle('slopes')
-    fig_slopes.savefig("imgs_python/slopes_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
+    fig_slopes.savefig(header+"slopes_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
 
     fig_slopes.suptitle('intervals')
-    fig_intervals.savefig("imgs_python/intervals_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
+    fig_intervals.savefig(header+"intervals_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
 
     fig_slopes_intervals.suptitle('x(i) is slope, y(i+1) is interval')
-    fig_slopes_intervals.savefig("imgs_python/slopes_intervals_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
+    fig_slopes_intervals.savefig(header+"slopes_intervals_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
 
     fig_intervals_slopes.suptitle('x(i) is interval, y(i+1) is slope')
-    fig_intervals_slopes.savefig("imgs_python/intervals_slopes_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
+    fig_intervals_slopes.savefig(header+"intervals_slopes_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
 
     fig_hist_slopes.tight_layout()
     fig_hist_slopes.suptitle('P(x+1|x), x is slope')
-    fig_hist_slopes.savefig("imgs_python/hist_slopes_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
+    fig_hist_slopes.savefig(header+"hist_slopes_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
 
     fig_heat_slopes.tight_layout()
     fig_heat_slopes.suptitle('P(x+1|x), x is slope', y=1.08)
-    fig_heat_slopes.savefig("imgs_python/heat_slopes_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
+    fig_heat_slopes.savefig(header+"heat_slopes_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
 
     fig_hist_intervals.tight_layout()
     fig_hist_intervals.suptitle('P(x+1|x), x is intervals')
-    fig_hist_intervals.savefig("imgs_python/hist_intervals_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
+    fig_hist_intervals.savefig(header+"hist_intervals_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
 
     fig_heat_intervals.tight_layout()
     fig_heat_intervals.suptitle('P(x+1|x), x is intervals', y=1.08)
-    fig_heat_intervals.savefig("imgs_python/heat_intervals_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
+    fig_heat_intervals.savefig(header+"heat_intervals_"+str(n)+".pdf",format='pdf',bbox_inches='tight')
 
 def get_prob(X,intervalsx):
     x_by_i = defaultdict(lambda:[])
@@ -231,23 +237,24 @@ def get_slope_val(nx,prob_slope1,x_by_i):
     slopev = to_select[slopeiv]
     return slopev,slopei
 
-def generate_artificial_series(n,prob_slope1,prob_cond,x_by_i):
-    series = []
-    for _ in range(n):
-        slope_artificial = np.zeros(4)
-        slope_artificial[0],slope0_i = get_slope_val(nx,prob_slope1,x_by_i[0])
+def generate_artificial_series(samples,prob_slope1,prob_cond,x_by_i,n):
+	series = []
+	for _ in range(samples):
+		slope_artificial = np.zeros(n)
+		slope_artificial[0],slope0_i = get_slope_val(nx,prob_slope1,x_by_i[0])
 
-        prob = prob_cond[0][slope0_i]
-        slope_artificial[1],slope1_i = get_slope_val(nx,prob,x_by_i[1])
+		for i in range(n-1):
+			prob = prob_cond[i][slope0_i]
+			slope_artificial[i+1],slope0_i = get_slope_val(nx,prob,x_by_i[i+1])
+
+        # prob = prob_cond[1][slope1_i]
+        # slope_artificial[2],slope2_i = get_slope_val(nx,prob,x_by_i[2])
         
-        prob = prob_cond[1][slope1_i]
-        slope_artificial[2],slope2_i = get_slope_val(nx,prob,x_by_i[2])
+        # prob = prob_cond[2][slope2_i]
+        # slope_artificial[3],_ = get_slope_val(nx,prob,x_by_i[3])
         
-        prob = prob_cond[2][slope2_i]
-        slope_artificial[3],_ = get_slope_val(nx,prob,x_by_i[3])
-        
-        series.append(slope_artificial)
-    return series
+		series.append(slope_artificial)
+	return series
 
 def save(series_slopes,series_intervals,filename):
     f = open(filename,'w')
@@ -263,90 +270,93 @@ def save(series_slopes,series_intervals,filename):
         f.write(to_str[:-1]+"\n")
     f.close()
 
-def artificial_series(slopes,intervalsx):
-    x_by_i = [0,0,0,0]
+def artificial_series(slopes,intervalsx,n,samples):
+    x_by_i = [None for _ in range(n)]
+    print(type(slopes[:,0]),type(intervalsx))
     x_by_i[0],prob_slope1 = get_prob(slopes[:,0],intervalsx)
-    x_by_i[1],_ = get_prob(slopes[:,1],intervalsx)
-    x_by_i[2],_ = get_prob(slopes[:,2],intervalsx)
-    x_by_i[3],_ = get_prob(slopes[:,3],intervalsx)
+    for i in range(1,n):
+	    x_by_i[i],_ = get_prob(slopes[:,i],intervalsx)
+    # x_by_i[2],_ = get_prob(slopes[:,2],intervalsx)
+    # x_by_i[3],_ = get_prob(slopes[:,3],intervalsx)
     
     prob_cond = []
-    prob_cond.append(calculate_cond_xi_xi1(slopes[:,0:2],intervalsx))
-    prob_cond.append(calculate_cond_xi_xi1(slopes[:,1:3],intervalsx))
-    prob_cond.append(calculate_cond_xi_xi1(slopes[:,2:4],intervalsx))
+    for i in range(n-1):
+	    prob_cond.append(calculate_cond_xi_xi1(slopes[:,i:i+2],intervalsx))
+    # prob_cond.append(calculate_cond_xi_xi1(slopes[:,1:3],intervalsx))
+    # prob_cond.append(calculate_cond_xi_xi1(slopes[:,2:4],intervalsx))
 
-    series_slopes = generate_artificial_series(1000,prob_slope1,prob_cond,x_by_i)
+    series_slopes = generate_artificial_series(samples,prob_slope1,prob_cond,x_by_i,n)
     
     return series_slopes
 
+def norm(xs):
+	mmax = max(xs)
+	mmin = min(xs)
+
+	return (xs-mmin)/(mmax-mmin)
+
 if __name__ == "__main__":
-    
-    # xs,ys = read_file_original()
-    # all_intervals = []
-    # all_n = []
-    # for n in [2,3,4,5]:
-        
-    #     idxs,slopes,breakpoints = read_file(n=n)
-    #     xs_n = [xs[idx] for idx in idxs]
-    #     print('n=',n,len(idxs))
-    #     all_n += [n]*len(idxs)
-    #     deltas += [xs[-1]-xs[0] for xs in xs_n]
-    #     # print(np.unique(delta_xs_n,return_counts=True))
-    # print(pearsonr(all_n,all_intervals))
 
-    nx = 10
-    ny = 10
+	nx = 10
+	ny = 10
 
-    minx,maxx = 0,90
-    deltax = (maxx-minx)/nx
-    intervalsx = np.arange(minx,maxx+deltax,deltax)
+	minx,maxx = 0,90
+	deltax = (maxx-minx)/nx
+	intervalsx = np.arange(minx,maxx+deltax,deltax)
 
-    miny,maxy = 0,1
-    deltay = (maxy-miny)/ny
-    intervalsy = np.arange(miny,maxy+deltay,deltay)
+	miny,maxy = 0,1
+	deltay = (maxy-miny)/ny
+	intervalsy = np.arange(miny,maxy+deltay,deltay)
 
-    
-    # for n in [2,3,4,5]:
-    #     _,slopes,breakpoints = read_file(n=n)
-    #     intervals = np.asarray([np.asarray(breakpoints2intervals(b)) for b in breakpoints])
-    #     slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
-        
-    #     plots(slopes,intervals,n,intervalsx,intervalsy)
-    
-    '''
-    ls = []
-    for x in slopes:
-        ls.append(len(x))
-    unique,count = np.unique(ls,return_counts=True)
-    for u,c in zip(unique,count):
-        print(u,c)
-    '''
-    
-    _,slopes,breakpoints = read_file(n=4)
-    intervals = np.asarray([np.asarray(breakpoints2intervals(b)) for b in breakpoints])
-    slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
-       
-    # plots()
-    # mean_interval = np.mean(intervals.flatten())
-    # artificial_series(slopes,intervalsx,mean_interval)
-    
-    # INTERVALO SEGUINDO PROB COND/ANGULO MEDIO DE CADA INTERVALO
-    mean_slopes = np.mean(slopes,axis=0)
-    articifial_xs = artificial_series(intervals,intervalsy)
-    # mean_slopes = [[mean_slopes]*4]*1000
-    mean_slopes = [mean_slopes.tolist()]*1000
-    articifial_xs = np.asarray(articifial_xs)
-    save(mean_slopes,articifial_xs,'data/artificial_intervals_slope_axis0.txt')
-    
-    # # INTERVALO SEGUINDO PROB COND/ANGULO ALEATÓRIO DE CADA INTERVALO
-    # artificial_slopes = np.random.choice(slopes.flatten(),size=4000).reshape(1000,4)
-    # save(artificial_slopes,articifial_xs,'data/artificial_intervals_slope_random.txt')
+	xs,ys = read_file_original(filename='data/plos_one_data_total.txt')
+	xs = np.asarray([norm(x) for x in xs])
+	ys = np.asarray([norm(y) for y in ys])
 
-    # # TUDO ALEATORIO (qualquer eixo)
-    # artificial_slopes = (np.random.rand(1000,4)*maxx)
-    # # artificial_slopes = np.random.choice(slopes.flatten(),size=4000).reshape(1000,4)
-    
-    # artificial_intervals = np.random.rand(1000,4)
-    # # artificial_intervals = np.random.choice(intervals.flatten(),size=4000).reshape(1000,4)
-    # save(artificial_slopes,artificial_intervals,'data/artificial_all_random.txt')
-    
+	for n in [2,3,4,5]:
+		idxs,slopes,breakpoints = read_file(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE.txt',n=n)
+		intervals = np.asarray([np.asarray(breakpoints2intervals(b)) for b in breakpoints])
+		slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
+
+		for idx,bs,ss in zip(idxs,breakpoints,slopes):
+			for s in ss:
+				if s < 0:
+					print(bs,ss)
+					for b in bs:
+						plt.axvline(b,color='red')
+					plt.scatter(xs[idx],ys[idx],color='green')
+					plt.show()
+        # plots(slopes,intervals,n,intervalsx,intervalsy,'imgs_python/plos_one/')
+
+	'''
+	ls = []
+	for x in slopes:
+	    ls.append(len(x))
+	unique,count = np.unique(ls,return_counts=True)
+	for u,c in zip(unique,count):
+	    print(u,c)
+	'''
+
+	'''
+	samples = 10000
+	for n in [2,3,4,5]:
+	    _,slopes,breakpoints = read_file(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE.txt',n=n)
+	    intervals = np.asarray([np.asarray(breakpoints2intervals(b)) for b in breakpoints])
+	    slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
+
+	    # INTERVALO SEGUINDO PROB COND/ANGULO MEDIO DE CADA INTERVALO
+	    mean_slopes = np.mean(slopes,axis=0)
+	    articifial_xs = artificial_series(intervals,intervalsy,n,samples)
+	    # mean_slopes = [[mean_slopes]*4]*1000
+	    mean_slopes = [mean_slopes.tolist()]*samples
+	    articifial_xs = np.asarray(articifial_xs)
+	    save(mean_slopes,articifial_xs,'data/plos_one_artificial_intervals_slope_axis0_'+str(n)+'.txt')
+	    
+	    # INTERVALO SEGUINDO PROB COND/ANGULO ALEATÓRIO DE CADA INTERVALO
+	    artificial_slopes = np.random.choice(slopes.flatten(),size=samples*n).reshape(samples,n)
+	    save(artificial_slopes,articifial_xs,'data/plos_one_artificial_intervals_slope_random_'+str(n)+'.txt')
+
+	    # TUDO ALEATORIO (qualquer eixo)
+	    artificial_slopes = (np.random.rand(samples,n)*maxx)
+	    artificial_intervals = np.random.rand(samples,n)
+	    save(artificial_slopes,artificial_intervals,'data/plos_one_artificial_all_random_'+str(n)+'.txt')
+	'''
