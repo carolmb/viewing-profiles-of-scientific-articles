@@ -9,7 +9,7 @@ import WOSGetter
 from matplotlib import cm
 from sklearn.utils.random import sample_without_replacement
 
-def plot_pca_colors(slopes,breakpoints,colors,k):
+def plot_pca_colors(slopes,breakpoints,colors,k,filename):
     colors = np.asarray(colors)
     slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
     intervals = [breakpoints2intervals(b) for b in breakpoints]
@@ -37,8 +37,9 @@ def plot_pca_colors(slopes,breakpoints,colors,k):
     # plt.title(title+' original std='+ str(original_std[0])[:5]+' artificial std='+str(artificial_std[0])[:5])
     # plt.xlabel('original std ='+str(original_std[1])[:5]+' artificial std='+str(artificial_std[1])[:5])
     plt.colorbar()
+    plt.title(filename+' pca')
     plt.show()
-    # plt.savefig(filename[:-4]+'_pca.png')
+    plt.savefig(filename+'_pca.png')
 
 plt.ion()
 
@@ -46,7 +47,7 @@ xs,ys = read_file_original(filename='data/plos_one_data_total.txt')
 
 for n in [2,3,4,5]:
     print(n)
-    idxs,slopes,breakpoints = read_file(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE.txt',n=n)
+    idxs,slopes,breakpoints = read_file(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_filtered.txt',n=n)
     xs_n = [xs[idx] for idx in idxs]
     # deltas = [1 if xs[-1]-xs[0] > 5 else 0 for xs in xs_n ]
 
@@ -59,9 +60,10 @@ for n in [2,3,4,5]:
     deltas = [min(q75+1.5*iqr,d) for d in deltas]
     deltas = [max(q25-1.5*iqr,d) for d in deltas]
     print(deltas[:10])
+    plot_pca_colors(slopes,breakpoints,deltas,n,'imgs_python/colors_delta_visual_'+str(n))
 
     # cor por delta anos
     deltas = [xs[-1]-xs[0] for xs in xs_n]
 
-    plot_pca_colors(slopes,breakpoints,deltas,n)
+    plot_pca_colors(slopes,breakpoints,deltas,n,'imgs_python/colors_delta_years_'+str(n))
     # print(np.unique(delta_xs_n,return_counts=True))

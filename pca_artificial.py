@@ -9,7 +9,7 @@ import glob
 
 def get_data(filename):
     n = int(filename.split('_')[-1].split('.txt')[0])
-    _,slopes_original,breakpoints_original = read_file(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE.txt',n=n)
+    _,slopes_original,breakpoints_original = read_file(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_filtered.txt',n=n)
     _,slopes_artificial,intervals_artificial = read_file(samples_breakpoints=filename,n=n)
 
     slopes_original = np.asarray([(np.arctan(s)*57.2958) for s in slopes_original])

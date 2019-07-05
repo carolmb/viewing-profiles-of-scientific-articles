@@ -20,7 +20,7 @@ normalize <- function(x) {
 	return (temp)
 }
 
-get_segmented <- function(dati,filename,itmax,k,stopiferror,nboot,yy,i) {
+get_segmented <- function(dati,filename,itmax,k,stopiferror,nboot,yy,i,xx) {
 	result <- tryCatch({
 
 
@@ -29,12 +29,29 @@ get_segmented <- function(dati,filename,itmax,k,stopiferror,nboot,yy,i) {
 	    o<-segmented(out.lm, seg.Z=~x, psi=NA, control=seg.control(it.max=itmax, display=FALSE,K=k, stop.if.error=stopiferror, n.boot=nboot))
 		y.mse <- mse(yy,broken.line(o,link=FALSE)$fit)
 
-		slopes<-slope(o)$x[,1]
-		breakpoints<-o$psi[,2]
+		if (y.mse >= 0.0001) {
+			jpeg(paste('ge/',i))
+			plot(o)
+			
+			lines(xx,yy,col='green')
+			dev.off()
+		} else {
+			slopes<-slope(o)$x[,1]
+			breakpoints<-o$psi[,2]
 
-		write(i, file = filename, append = TRUE)
-		write.table(t(slopes), file = filename, append = TRUE, col.names=FALSE, row.names=FALSE)
-		write.table(t(breakpoints), file = filename, append = TRUE, col.names=FALSE, row.names=FALSE)
+			write(i, file = filename, append = TRUE)
+			write.table(t(slopes), file = filename, append = TRUE, col.names=FALSE, row.names=FALSE)
+			write.table(t(breakpoints), file = filename, append = TRUE, col.names=FALSE, row.names=FALSE)
+
+			jpeg(paste('ls/',i))
+			plot(o)
+			
+			lines(xx,yy,col='green')
+			dev.off()
+		}
+
+
+		return (o)
 
 	}, error = function(e) {
 		print(paste("MY_ERROR:  ",e))
@@ -64,7 +81,8 @@ tests <- function(itmax,k,stopiferror) {
 
 		dati<-data.frame(x=xx,y=yy)
 		
-		y<-get_segmented(dati,filename,itmax,k,stopiferror,nboot,yy,i)
+		y<-get_segmented(dati,filename,itmax,k,stopiferror,nboot,yy,i,xx)
+
 	}
 }
 
