@@ -25,7 +25,7 @@ def read_file(samples_breakpoints='data/breakpoints_k4it.max100stop.if.errorFALS
     return np.asarray(idxs),np.asarray(slopes),np.asarray(breakpoints)
 
 xs,ys = read_file_original(filename='data/plos_one_data_total.txt')
-idxs,breakpoints,slopes = read_file('data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_filtered.txt')
+idxs,slopes,breakpoints = read_file('data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_filtered.txt')
 
 # for x,y in zip(xs[:100],ys[:100]):
 #     print(x,y)
@@ -65,18 +65,31 @@ plot_hist(deleted_delta_time,'hist_deleted_articles.png')
 
 idxs = idxs.tolist()
 
+def get_b_pos(b):
+    for i,v in enumerate([0.2,0.4,0.6,0.8,1]):
+        if b < v:
+            return i
+    print(b)
+
 for k,v in groups.items():
     ys_v = visualizations[v]
-    print(k,len(ys_v),min(ys_v),max(ys_v),np.std(ys_v))
+    print(k,stats.describe(ys_v))
     plot_hist(ys_v,'hist_group_'+str(k)+'.png')
 
     breakpoints_freq = []
     # print(v[:10])
     # print(idxs[:10])
+    freqs_by_n = defaultdict(lambda:[])
     for i in v:
         try:
             i = idxs.index(i)
-            breakpoints_freq.append(len(breakpoints[i]))
+            n = len(breakpoints[i])
+            breakpoints_freq.append(n)
+            for b in breakpoints[i]:
+                freqs_by_n[n].append(get_b_pos(b))
         except:
             pass
     plot_hist(breakpoints_freq,'hist_breakpoints_freq_'+str(k)+'.png')
+    for n,freqs in freqs_by_n.items():
+        plot_hist(freqs,'hist_freq_breaklocation_'+str(n)+'_group_'+str(k)+'.png')
+
