@@ -55,7 +55,7 @@ def pca_fit(original,artificial,all_data,title):
 
 plt.ion()
 # DADOS GERADOS PARA INTERVALOS ARTIFICIAIS (ANGULO FIXO, INTERVALO VARIANDO)
-filenames = glob.glob('data/plos_one_artificial_*.txt')
+filenames = glob.glob('data/plos_one_artificial_intervals_slopes_*.txt')
 
 for filename in filenames:
     artificial_data,original_data,all_data = get_data(filename)
