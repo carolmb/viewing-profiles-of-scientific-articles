@@ -20,6 +20,27 @@ def read_file_original(filename='data/samples.txt'):
     
     return np.asarray(X),np.asarray(Y)
 
+def read_original_breakpoints(samples_breakpoints,n):
+    samples_breakpoints = open(samples_breakpoints,'r').read().split('\n')[:-1]
+    total_series = len(samples_breakpoints)
+    slopes = []
+    breakpoints = []
+    preds = []
+    idxs = []
+    for i in range(0,total_series,4):
+        idx = int(samples_breakpoints[i]) - 1
+        
+        slopes_i = [float(n) for n in samples_breakpoints[i+1].split(' ')]
+        breakpoints_i = [float(n) for n in samples_breakpoints[i+2].split(' ')]
+        preds_i = [float(n) for n in samples_breakpoints[i+3].split(' ')]
+        if len(slopes_i) == n:
+            idxs.append(idx)
+            
+            slopes.append(np.asarray(slopes_i))
+            breakpoints.append(np.asarray(breakpoints_i))
+            preds.append(np.asarray(preds_i))
+    
+    return np.asarray(idxs),np.asarray(slopes),np.asarray(breakpoints)#,np.asarray(preds)
 
 def read_file(samples_breakpoints='data/breakpoints_k4it.max100stop.if.errorFALSE.txt',n=4):
     samples_breakpoints = open(samples_breakpoints,'r').read().split('\n')[:-1]
@@ -308,16 +329,16 @@ if __name__ == "__main__":
     deltay = (maxy-miny)/ny
     intervalsy = np.arange(miny,maxy+deltay,deltay)
 
-    xs,ys = read_file_original(filename='data/plos_one_data_total.txt')
-    xs = np.asarray([norm(x) for x in xs])
-    ys = np.asarray([norm(y) for y in ys])
+    # xs,ys = read_file_original(filename='data/plos_one_data_total.txt')
+    # xs = np.asarray([norm(x) for x in xs])
+    # ys = np.asarray([norm(y) for y in ys])
 
-    # for n in [2,3,4,5]:
-    #     idxs,slopes,breakpoints= read_file(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_filtered.txt',n=n)
-    #     intervals = np.asarray([np.asarray(breakpoints2intervals(b)) for b in breakpoints])
-    #     slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
+    for n in [2,3,4,5]:
+        idxs,slopes,breakpoints= read_original_breakpoints(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_original_data_filtered.txt',n=n)
+        intervals = np.asarray([np.asarray(breakpoints2intervals(b)) for b in breakpoints])
+        slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
 
-    #     plots(slopes,intervals,n,intervalsx,intervalsy,'imgs_python/plos_one/')
+        plots(slopes,intervals,n,intervalsx,intervalsy,'imgs_python/plos_one/')
 
     '''
     ls = []
@@ -330,38 +351,36 @@ if __name__ == "__main__":
 
     samples = 10000
     for n in [2,3,4,5]:
-        _,slopes,breakpoints = read_file(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_filtered.txt',n=n)
+        _,slopes,breakpoints = read_original_breakpoints(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_original_data_filtered.txt',n=n)
         intervals = np.asarray([np.asarray(breakpoints2intervals(b)) for b in breakpoints])
         slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
 
-        # # INTERVALO SEGUINDO PROB COND/ANGULO MEDIO DE CADA INTERVALO
-        # mean_slopes = np.mean(slopes,axis=0)
+        # INTERVALO SEGUINDO PROB COND/ANGULO MEDIO DE CADA INTERVALO
+        mean_slopes = np.mean(slopes,axis=0)
         articifial_xs = artificial_series(intervals,intervalsy,n,samples)
-        # # mean_slopes = [[mean_slopes]*4]*1000
-        # mean_slopes = [mean_slopes.tolist()]*samples
+        mean_slopes = [mean_slopes.tolist()]*samples
         articifial_xs = np.asarray(articifial_xs)
-        # save(mean_slopes,articifial_xs,'data/plos_one_artificial_intervals_slope_axis0_'+str(n)+'.txt')
+        save(mean_slopes,articifial_xs,'data/plos_one_artificial_intervals_slope_axis0_'+str(n)+'.txt')
         
-        # # INTERVALO SEGUINDO PROB COND/ANGULO ALEATÓRIO DE CADA INTERVALO
-        # artificial_slopes = np.random.choice(slopes.flatten(),size=samples*n).reshape(samples,n)
-        # save(artificial_slopes,articifial_xs,'data/plos_one_artificial_intervals_slope_random_'+str(n)+'.txt')
+        # INTERVALO SEGUINDO PROB COND/ANGULO ALEATÓRIO DE CADA INTERVALO
+        artificial_slopes = np.random.choice(slopes.flatten(),size=samples*n).reshape(samples,n)
+        save(artificial_slopes,articifial_xs,'data/plos_one_artificial_intervals_slope_random_'+str(n)+'.txt')
 
         # # TUDO ALEATORIO (qualquer eixo)
-        # artificial_slopes = (np.random.rand(samples,n)*maxx)
-        # artificial_intervals = np.random.rand(samples,n)
-        # save(artificial_slopes,artificial_intervals,'data/plos_one_artificial_all_random_'+str(n)+'.txt')
+        artificial_slopes = (np.random.rand(samples,n)*maxx)
+        artificial_intervals = np.random.rand(samples,n)
+        save(artificial_slopes,artificial_intervals,'data/plos_one_artificial_all_random_'+str(n)+'.txt')
 
         # SLOPES SEGUINDO PROB COND/ANGULO MEDIO DE CADA INTERVALO
-        # mean_intervals = np.mean(intervals,axis=0)
-        # articifial_slopes = artificial_series(slopes,intervalsx,n,samples)
-        # # mean_slopes = [[mean_slopes]*4]*1000
-        # mean_intervals = [mean_intervals.tolist()]*samples
-        # mean_intervals = np.asarray(mean_intervals)
-        # save(articifial_slopes,mean_intervals,'data/plos_one_artificial_slopes_interval_axis0_'+str(n)+'.txt')
+        mean_intervals = np.mean(intervals,axis=0)
+        articifial_slopes = artificial_series(slopes,intervalsx,n,samples)
+        mean_intervals = [mean_intervals.tolist()]*samples
+        mean_intervals = np.asarray(mean_intervals)
+        save(articifial_slopes,mean_intervals,'data/plos_one_artificial_slopes_interval_axis0_'+str(n)+'.txt')
         
         # # INTERVALO SEGUINDO PROB COND/ANGULO ALEATÓRIO DE CADA INTERVALO
-        # artificial_intervals = np.random.choice(intervals.flatten(),size=samples*n).reshape(samples,n)
-        # save(articifial_slopes,artificial_intervals,'data/plos_one_artificial_slopes_interval_random_'+str(n)+'.txt')
+        artificial_intervals = np.random.choice(intervals.flatten(),size=samples*n).reshape(samples,n)
+        save(articifial_slopes,artificial_intervals,'data/plos_one_artificial_slopes_interval_random_'+str(n)+'.txt')
 
         # INTERVALOS E SLOPES SEGUINDO O MODELO
         articifial_intevals = artificial_series(intervals,intervalsy,n,samples)        
