@@ -61,7 +61,7 @@ get_segmented <- function(dati,filename,itmax,k,stopiferror,nboot,yy,i,xx) {
 }
 
 tests <- function(itmax,k,stopiferror) {
-	filename <- paste("../data/plos_one_total_breakpoints_k",toString(k),"it.max",toString(itmax),"stop.if.error",toString(stopiferror),"_original_data.txt",sep="")
+	filename <- paste("../data/plos_one_total_breakpoints_k",toString(k),"_original_data.txt",sep="")
 	conn <- file(filename,open="w")
 	close(conn)
   
