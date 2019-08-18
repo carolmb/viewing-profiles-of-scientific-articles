@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
-from analise_breakpoints import read_file
+from analise_breakpoints import read_original_breakpoints,read_artificial_breakpoints
 from analise_breakpoints import breakpoints2intervals
 from scipy.stats import pearsonr
 from analise_breakpoints import read_file_original
@@ -9,8 +9,8 @@ import glob
 
 def get_data(filename):
     n = int(filename.split('_')[-1].split('.txt')[0])
-    _,slopes_original,breakpoints_original = read_file(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_filtered.txt',n=n)
-    _,slopes_artificial,intervals_artificial = read_file(samples_breakpoints=filename,n=n)
+    _,slopes_original,breakpoints_original = read_original_breakpoints(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_original0_data_filtered.txt',n=n)
+    _,slopes_artificial,intervals_artificial = read_artificial_breakpoints(samples_breakpoints=filename)
 
     slopes_original = np.asarray([(np.arctan(s)*57.2958) for s in slopes_original])
     #print(slopes_original[:1])
@@ -50,12 +50,13 @@ def pca_fit(original,artificial,all_data,title):
     plt.xlabel('original std ='+str(original_std[1])[:5]+' artificial std='+str(artificial_std[1])[:5])
 
     plt.show()
-    plt.savefig('imgs_python/'+filename[5:-4]+'_pca.png')
+    header = filename.split('/')[-1]
+    plt.savefig('imgs_python/plos_one_original0/'+header[:-4]+'_pca.png')
 
 
 plt.ion()
 # DADOS GERADOS PARA INTERVALOS ARTIFICIAIS (ANGULO FIXO, INTERVALO VARIANDO)
-filenames = glob.glob('data/plos_one_artificial_intervals_slopes_*.txt')
+filenames = glob.glob('data/original0/*.txt')
 
 for filename in filenames:
     artificial_data,original_data,all_data = get_data(filename)

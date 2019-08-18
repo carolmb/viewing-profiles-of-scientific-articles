@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import matplotlib.pyplot as plt
@@ -20,29 +21,49 @@ def read_file_original(filename='data/samples.txt'):
     
     return np.asarray(X),np.asarray(Y)
 
-def read_original_breakpoints(samples_breakpoints,n):
+def read_original_breakpoints(samples_breakpoints,N):
     samples_breakpoints = open(samples_breakpoints,'r').read().split('\n')[:-1]
     total_series = len(samples_breakpoints)
     slopes = []
     breakpoints = []
-    preds = []
+    # preds = []
     idxs = []
     for i in range(0,total_series,4):
         idx = int(samples_breakpoints[i]) - 1
         
         slopes_i = [float(n) for n in samples_breakpoints[i+1].split(' ')]
         breakpoints_i = [float(n) for n in samples_breakpoints[i+2].split(' ')]
-        preds_i = [float(n) for n in samples_breakpoints[i+3].split(' ')]
-        if len(slopes_i) == n:
+        # preds_i = [float(n) for n in samples_breakpoints[i+3].split(' ')]
+        if len(slopes_i) == N:
             idxs.append(idx)
             
             slopes.append(np.asarray(slopes_i))
             breakpoints.append(np.asarray(breakpoints_i))
-            preds.append(np.asarray(preds_i))
+            # preds.append(np.asarray(preds_i))
     
     return np.asarray(idxs),np.asarray(slopes),np.asarray(breakpoints)#,np.asarray(preds)
 
-def read_file(samples_breakpoints='data/breakpoints_k4it.max100stop.if.errorFALSE.txt',n=4):
+def read_artificial_breakpoints(samples_breakpoints):
+    samples_breakpoints = open(samples_breakpoints,'r').read().split('\n')[:-1]
+    total_series = len(samples_breakpoints)
+    slopes = []
+    breakpoints = []
+    # preds = []
+    idxs = []
+    for i in range(0,total_series,3):
+        idx = int(samples_breakpoints[i]) - 1
+        
+        slopes_i = [float(n) for n in samples_breakpoints[i+1].split(' ')]
+        breakpoints_i = [float(n) for n in samples_breakpoints[i+2].split(' ')]
+        # preds_i = [float(n) for n in samples_breakpoints[i+3].split(' ')]
+        idxs.append(idx)
+
+        slopes.append(np.asarray(slopes_i))
+        breakpoints.append(np.asarray(breakpoints_i))
+
+    return np.asarray(idxs),np.asarray(slopes),np.asarray(breakpoints)
+
+def read_file(samples_breakpoints='data/breakpoints_k4it.max100stop.if.errorFALSE.txt',N=4):
     samples_breakpoints = open(samples_breakpoints,'r').read().split('\n')[:-1]
     total_series = len(samples_breakpoints)
     slopes = []
@@ -57,7 +78,7 @@ def read_file(samples_breakpoints='data/breakpoints_k4it.max100stop.if.errorFALS
         y_pred_i = [float(n) for n in samples_breakpoints[i+3].split(' ')]
         # breakpoints_i.append(1.0)
 
-        if len(slopes_i) == n:
+        if len(slopes_i) == N:
             idxs.append(idx)
             slopes.append(np.asarray(slopes_i))
             breakpoints.append(np.asarray(breakpoints_i))
@@ -336,11 +357,11 @@ if __name__ == "__main__":
     # ys = np.asarray([norm(y) for y in ys])
 
     for n in [2,3,4,5]:
-        idxs,slopes,breakpoints= read_original_breakpoints(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_original_data_filtered.txt',n=n)
+        idxs,slopes,breakpoints= read_original_breakpoints(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_original0_data_filtered.txt',n=n)
         intervals = np.asarray([np.asarray(breakpoints2intervals(b)) for b in breakpoints])
         slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
 
-        plots(slopes,intervals,n,intervalsx,intervalsy,'imgs_python/plos_one/')
+        plots(slopes,intervals,n,intervalsx,intervalsy,'imgs_python/plos_one_original0/')
 
     '''
     ls = []
@@ -353,7 +374,7 @@ if __name__ == "__main__":
 
     samples = 10000
     for n in [2,3,4,5]:
-        _,slopes,breakpoints = read_original_breakpoints(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_original_data_filtered.txt',n=n)
+        _,slopes,breakpoints = read_original_breakpoints(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_original0_data_filtered.txt',n=n)
         intervals = np.asarray([np.asarray(breakpoints2intervals(b)) for b in breakpoints])
         slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
 
@@ -362,30 +383,30 @@ if __name__ == "__main__":
         articifial_xs = artificial_series(intervals,intervalsy,n,samples)
         mean_slopes = [mean_slopes.tolist()]*samples
         articifial_xs = np.asarray(articifial_xs)
-        save(mean_slopes,articifial_xs,'data/plos_one_artificial_intervals_slope_axis0_'+str(n)+'.txt')
+        save(mean_slopes,articifial_xs,'data/original0/plos_one_artificial_intervals_slope_axis0_'+str(n)+'.txt')
         
         # INTERVALO SEGUINDO PROB COND/ANGULO ALEATÓRIO DE CADA INTERVALO
         artificial_slopes = np.random.choice(slopes.flatten(),size=samples*n).reshape(samples,n)
-        save(artificial_slopes,articifial_xs,'data/plos_one_artificial_intervals_slope_random_'+str(n)+'.txt')
+        save(artificial_slopes,articifial_xs,'data/original0/plos_one_artificial_intervals_slope_random_'+str(n)+'.txt')
 
         # # TUDO ALEATORIO (qualquer eixo)
         artificial_slopes = (np.random.rand(samples,n)*maxx)
         artificial_intervals = np.random.rand(samples,n)
-        save(artificial_slopes,artificial_intervals,'data/plos_one_artificial_all_random_'+str(n)+'.txt')
+        save(artificial_slopes,artificial_intervals,'data/original0/plos_one_artificial_all_random_'+str(n)+'.txt')
 
         # SLOPES SEGUINDO PROB COND/ANGULO MEDIO DE CADA INTERVALO
         mean_intervals = np.mean(intervals,axis=0)
         articifial_slopes = artificial_series(slopes,intervalsx,n,samples)
         mean_intervals = [mean_intervals.tolist()]*samples
         mean_intervals = np.asarray(mean_intervals)
-        save(articifial_slopes,mean_intervals,'data/plos_one_artificial_slopes_interval_axis0_'+str(n)+'.txt')
+        save(articifial_slopes,mean_intervals,'data/original0/plos_one_artificial_slopes_interval_axis0_'+str(n)+'.txt')
         
         # # INTERVALO SEGUINDO PROB COND/ANGULO ALEATÓRIO DE CADA INTERVALO
         artificial_intervals = np.random.choice(intervals.flatten(),size=samples*n).reshape(samples,n)
-        save(articifial_slopes,artificial_intervals,'data/plos_one_artificial_slopes_interval_random_'+str(n)+'.txt')
+        save(articifial_slopes,artificial_intervals,'data/original0/plos_one_artificial_slopes_interval_random_'+str(n)+'.txt')
 
         # INTERVALOS E SLOPES SEGUINDO O MODELO
         articifial_intevals = artificial_series(intervals,intervalsy,n,samples)        
         # articifial_intevals = np.asarray(articifial_intevals)
         articifial_slopes = artificial_series(slopes,intervalsx,n,samples)
-        save(articifial_slopes,articifial_intevals,'data/plos_one_artificial_intervals_slopes_'+str(n)+'.txt')
+        save(articifial_slopes,articifial_intevals,'data/original0/plos_one_artificial_intervals_slopes_'+str(n)+'.txt')

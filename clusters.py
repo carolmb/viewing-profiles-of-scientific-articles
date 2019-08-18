@@ -1,95 +1,79 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[15]:
+
+
 import numpy as np
-from analise_breakpoints import read_file
-from analise_breakpoints import breakpoints2intervals
-from sklearn.cluster import KMeans
-from sklearn.cluster import AgglomerativeClustering
-from sklearn.datasets import make_blobs
-from sklearn.metrics import silhouette_samples, silhouette_score
+# from analise_breakpoints import read_file,read_file_original
+# from analise_breakpoints import breakpoints2intervals
+# from sklearn.cluster import KMeans
+# from sklearn.cluster import AgglomerativeClustering
+# from sklearn.datasets import make_blobs
+# from sklearn.metrics import silhouette_samples, silhouette_score
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
 from sklearn.decomposition import PCA
 from scipy.stats import describe
+from pyksc import ksc
 
-def test_n_clusters(range_n_clusters,X,alg,name):
-    for n_clusters in range_n_clusters:
-        # Create a subplot with 1 row and 2 columns
-        fig, (ax1, ax2) = plt.subplots(1, 2)
-        fig.set_size_inches(18, 7)
+def read_file_original(filename='data/samples.txt'):
+    samples_breakpoints = open(filename,'r').read().split('\n')[:-1]
+    total_series = len(samples_breakpoints)
+    X = []
+    Y = []
+    for i in range(0,total_series,2):
+        xs = [float(n) for n in samples_breakpoints[i].split(',')]
+        ys = [float(n) for n in samples_breakpoints[i+1].split(',')]
+        # breakpoints_i.append(1.0)
+        X.append(np.asarray(xs))
+        Y.append(np.asarray(ys))
+    
+    return np.asarray(X),np.asarray(Y)
 
-        ax1.set_xlim([-0.1, 1])
-        ax1.set_ylim([0, len(X) + (n_clusters + 1) * 10])
+def read_file(samples_breakpoints='data/breakpoints_k4it.max100stop.if.errorFALSE.txt',N=4):
+    samples_breakpoints = open(samples_breakpoints,'r').read().split('\n')[:-1]
+    total_series = len(samples_breakpoints)
+    slopes = []
+    breakpoints = []
+    idxs = []
+    preds = []
+    for i in range(0,total_series,4):
+        idx = int(samples_breakpoints[i]) - 1
         
-        clusterer = alg(n_clusters=n_clusters)
-        cluster_labels = clusterer.fit_predict(X)
-
-        silhouette_avg = silhouette_score(X, cluster_labels)
-        print("For n_clusters =", n_clusters,
-            "The average silhouette_score is :", silhouette_avg)
-
-        sample_silhouette_values = silhouette_samples(X, cluster_labels)
-
-        y_lower = 10
-        for i in range(n_clusters):
-            ith_cluster_silhouette_values = \
-                sample_silhouette_values[cluster_labels == i]
-
-            ith_cluster_silhouette_values.sort()
-
-            size_cluster_i = ith_cluster_silhouette_values.shape[0]
-            y_upper = y_lower + size_cluster_i
-
-            color = cm.nipy_spectral(float(i) / n_clusters)
-            ax1.fill_betweenx(np.arange(y_lower, y_upper),
-                            0, ith_cluster_silhouette_values,
-                            facecolor=color, edgecolor=color, alpha=0.7)
-
-            # Label the silhouette plots with their cluster numbers at the middle
-            ax1.text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
-
-            # Compute the new y_lower for next plot
-            y_lower = y_upper + 10  # 10 for the 0 samples
-
-        ax1.set_title("The silhouette plot for the various clusters.")
-        ax1.set_xlabel("The silhouette coefficient values")
-        ax1.set_ylabel("Cluster label")
-
-        # The vertical line for average silhouette score of all the values
-        ax1.axvline(x=silhouette_avg, color="red", linestyle="--")
-
-        ax1.set_yticks([])  # Clear the yaxis labels / ticks
-        ax1.set_xticks([-0.1, 0, 0.2, 0.4, 0.6, 0.8, 1])
-
-        # 2nd Plot showing the actual clusters formed
-        colors = cm.nipy_spectral(cluster_labels.astype(float) / n_clusters)
-        pca = PCA(n_components=2)
-        pca.fit(X)
-        X1 = pca.transform(X)
-        ax2.scatter(X1[:, 0], X1[:, 1], marker='.', s=30, lw=0, alpha=0.7,
-                    c=colors, edgecolor='k')
-
-        ax2.set_title("The visualization of the clustered data.")
-        ax2.set_xlabel("Feature space for the 1st feature")
-        ax2.set_ylabel("Feature space for the 2nd feature")
+        slopes_i = [float(n) for n in samples_breakpoints[i+1].split(' ')]
         
-        plt.suptitle(("Silhouette analysis for AgglomerativeClustering on sample data "
-                    "with n_clusters = %d" % n_clusters),
-                    fontsize=14, fontweight='bold')
-        plt.savefig(name+'_'+str(n_clusters)+'.pdf',format='pdf')
+        breakpoints_i = [float(n) for n in samples_breakpoints[i+2].split(' ')]
+        y_pred_i = [float(n) for n in samples_breakpoints[i+3].split(' ')]
+        # breakpoints_i.append(1.0)
 
-    plt.show()
 
-def get_values_by_label(ktotal,alg,X):
+        if len(slopes_i) == N:
+            idxs.append(idx)
+            slopes.append(np.array(slopes_i))
+            breakpoints.append(np.array(breakpoints_i))
+            preds.append(np.array(y_pred_i))
+    return np.asarray(idxs),np.asarray(slopes),np.asarray(breakpoints),np.asarray(preds)
+
+
+def plot_pca(ktotal,alg,X):
     kmeans = alg(n_clusters=ktotal)
     kmeans.fit(X)
     labels = kmeans.predict(X)
-    intervals_by_label = dict()
-    for i in range(ktotal):
-        intervals_by_label[i] = []
-    for l,x in zip(labels,X):
-        intervals_by_label[l].append(x)
-
-    return intervals_by_label
+    print(labels[:10])
+    
+    label_colors = [colors[l] for l in labels]
+    
+    pca = PCA(n_components=2)
+    pca.fit(X)
+    X1 = pca.transform(X)
+    plt.scatter(X1[:,0],X1[:,1],color=label_colors)
+    plt.show()
+    
+    return labels
 
 def plot_lines_blox_plot(intervals_by_label,ktotal,dim=8):
     fig1 = plt.figure(figsize=(4,2*(ktotal+1)))
@@ -123,36 +107,83 @@ def plot_lines_blox_plot(intervals_by_label,ktotal,dim=8):
     fig1.tight_layout()
     plt.show()
 
+
+# In[10]:
+
+
 # range_n_clusters = [2, 3, 4, 5, 6]
 # test_n_clusters(range_n_clusters,X,KMeans,'kmeans')
 
-slopes_artificial,intervals_artificial = read_file(samples_breakpoints='data/artificial_intervals.txt')
+idxs,slopes_artificial,intervals_artificial,preds = read_file(samples_breakpoints='data/plos_one_total_breakpoints_k4_original1_data_filtered.txt')
+
 intervals_artificial = np.asarray(intervals_artificial)
-slopes_original,breakpoints_original = read_file()
-intervals_original = np.asarray([breakpoints2intervals(b) for b in breakpoints_original])
+xs,ys = read_file_original('data/plos_one_data_total.txt')
+# slopes_original = [s for s in slopes_original if len(s) == 4]
+# breakpoints_original = [s for s in breakpoints_original if len(s) == 4]
+# intervals_original = np.asarray([breakpoints2intervals(b) for b in breakpoints_original])
 
 # DADOS NORMALIZADOS POR TODOS OS DADOS
-original_data = np.concatenate((slopes_original,intervals_original),axis=1)
-artificial_data = np.concatenate((slopes_artificial,intervals_artificial),axis=1)
-all_data = np.concatenate((original_data,artificial_data),axis=0)
+# original_data = np.concatenate((slopes_original,intervals_original),axis=1)
+artificial_data_original = np.concatenate((slopes_artificial,intervals_artificial),axis=1)
+# all_data = np.concatenate((original_data,artificial_data),axis=0)
+all_data = artificial_data_original
 
 m = np.mean(all_data,axis=0)
 std = np.std(all_data,axis=0)
-original_data = (original_data - m)/std
-artificial_data = (artificial_data -m)/std
+# original_data = (original_data - m)/std
+artificial_data = (artificial_data_original -m)/std
+print(artificial_data.shape)
+
+def plot_clusters(labels,artificial_data_original):
+    group_by = {0:[],1:[],2:[]}
+    for l,i in zip(labels,artificial_data_original):
+        group_by[l].append(i)
+
+    for k,values in group_by.items():
+        values = np.asarray(values)
+
+        means = np.mean(values,axis=0)
+
+        stds = np.std(values,axis=0)
+        degrees = means[:4]
+        breaks = means[4:]
+
+        x0 = [0]
+        y0 = [0]
+        b0 = 0
+        s0 = [0]
+
+        for d,b,s in zip(degrees,breaks,stds):
+            x0.append(b)
+            y0.append(y0[-1]+(b-b0)*d)
+            b0 = b
+            s0.append(s)
+
+        x0.append(1)
+        y0.append(1)
+        s0.append(0)
+        plt.errorbar(x0,y0,yerr=s0,c=colors[k])
+
+    #     plt.errorbar(list(range(len(means))),means,yerr=stds)
+
+    plt.savefig('ksc_curves.png')
+
 
 ktotal = 3
-alg = KMeans
-intervals_by_label = get_values_by_label(ktotal,alg,original_data)
-plot_lines_blox_plot(intervals_by_label,ktotal)
+colors = plt.get_cmap('magma')
+colors = colors(np.linspace(0,1,ktotal))
+print(colors)
 
-plt.scatter(original_data[:, 4], original_data[:, 6], marker='.', s=30, lw=0, alpha=0.7)
-plt.xlabel('interval 1')
-plt.ylabel('interval 2')
-plt.show()
+cents, assign, shift, distc = ksc.ksc(artificial_data, ktotal)
+print(cents)
+print(assign)
 
-# pca usando todos os dados OK
-# clusters usando todo os dados
-# sinais aleatórios para comparar os originais OK
-# angulos diferentes e intervalos probabilisticos OK
-# visualizar intervalos 1 e 3 OK
+X = artificial_data
+pca = PCA(n_components=2)
+pca.fit(X)
+X1 = pca.transform(X)
+plt.scatter(X1[:,0],X1[:,1],c=assign)
+plt.savefig('ksc_clusters.png')
+# labels = plot_pca(ktotal,alg,artificial_data)
+
+plot_clusters(assign,artificial_data_original)

@@ -30,13 +30,21 @@ get_segmented <- function(dati,filename,itmax,k,stopiferror,nboot,yy,i,xx) {
 		y.mse <- mse(yy,broken.line(o,link=FALSE)$fit)
 
 		if (y.mse >= 0.0001) {
-			# jpeg(paste('ge/',i))
-			# plot(o)
+		# y.mape <- mape(yy,broken.line(o,link=FALSE)$fit)
+		# if (y.mape >= 0.02) {
+		# 	# jpeg(paste('ge/',i))
+		# 	# plot(o)
 			
-			# lines(xx,yy,col='green')
-			# dev.off()
+		# 	# lines(xx,yy,col='green')
+		# 	# dev.off()
+		# 	print('if')
 		} else {
 			slopes<-slope(o)$x[,1]
+
+			# print(slopes)
+			# plot(o)
+			# lines(xx,yy,col='green')
+			
 			breakpoints<-o$psi[,2]
 			pred<-predict(o)
 			write(i, file = filename, append = TRUE)
@@ -49,6 +57,7 @@ get_segmented <- function(dati,filename,itmax,k,stopiferror,nboot,yy,i,xx) {
 			
 			# lines(xx,yy,col='green')
 			# dev.off()
+		# 	print('else')
 		}
 
 		return (o)
@@ -61,7 +70,7 @@ get_segmented <- function(dati,filename,itmax,k,stopiferror,nboot,yy,i,xx) {
 }
 
 tests <- function(itmax,k,stopiferror) {
-	filename <- paste("../data/plos_one_total_breakpoints_k",toString(k),"_original_data.txt",sep="")
+	filename <- paste("../data/plos_one_total_breakpoints_k",toString(k),"_original0_data.txt",sep="")
 	conn <- file(filename,open="w")
 	close(conn)
   
@@ -75,15 +84,15 @@ tests <- function(itmax,k,stopiferror) {
 		if (i%%1000==0){
 		  print(i)
 		}
-
+        
 		xx<-normalize(data[[i]]$months)
 		yy<-normalize(data[[i]]$views)
-		# xx<-data[[i]]$months
-		# yy<-data[[i]]$views
-
+		
+		# xx<-data[[i]]$months[2:length(data[[i]]$months)]
+		# yy<-data[[i]]$views[2:length(data[[i]]$views)]
+		
 		dati<-data.frame(x=xx,y=yy)
 		
-		# print(yy)
 		y<-get_segmented(dati,filename,itmax,k,stopiferror,nboot,yy,i,xx)
 	}
 }
