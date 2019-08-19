@@ -61,7 +61,7 @@ def read_original_breakpoints(filename,N):
         y_pred_i = [float(n) for n in samples_breakpoints[i+3].split(' ')]
         # breakpoints_i.append(1.0) ???????
 
-        if len(slopes_i) == N:
+        if N == len(slopes_i) or N == None:
             idxs.append(idx)
             slopes.append(np.asarray(slopes_i))
             breakpoints.append(np.asarray(breakpoints_i))
@@ -82,3 +82,17 @@ def save(series_slopes,series_intervals,filename):
             to_str += str(v)+' '
         f.write(to_str[:-1]+"\n")
     f.close()
+
+def breakpoints2intervals(x):
+    intervals = [x[0]]
+    for i in range(len(x)-1):
+        intervals.append(x[i+1]-x[i])
+    intervals.append(1-x[-1])
+    return intervals
+    
+def preprocess_original_breakpoints(filename,n):
+    idxs,slopes,breakpoints,_ = read_original_breakpoints(filename,n)
+    intervals = np.asarray([np.asarray(breakpoints2intervals(b)) for b in breakpoints])
+    slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
+
+    return idxs,slopes,intervals

@@ -2,23 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict
 from mpl_toolkits.mplot3d import Axes3D
-
-def calculate_cond_xi_xi1(X,intervalsx):
-    prob_xi = defaultdict(lambda:0)
-    prob_xi1 = defaultdict(lambda:defaultdict(lambda:0))
-    
-    for x in X:
-        for j in range(len(intervalsx)-1):
-            if x[0] >= intervalsx[j] and x[0] < intervalsx[j+1]:
-                prob_xi[j] += 1
-                for k in range(len(intervalsx)-1):
-                    if x[1] > intervalsx[k] and x[1] <= intervalsx[k+1]:
-                        prob_xi1[j][k] += 1
-    for i,prob in prob_xi1.items():
-        total = prob_xi[i]
-        for j in prob.keys():
-            prob[j] = prob[j]/total
-    return prob_xi1
+from artificial_data import calculate_cond_xi_xi1
 
 def plot_heat(ax,hist,xedges,yedges,labelx,labely):
     nx = len(xedges)
@@ -48,56 +32,28 @@ def plot_hist(ax,hist,xedges,yedges,labelx,labely):
     ax.set_xlabel(labelx)
     ax.set_ylabel(labely)
 
-def calculate_hists(n,name,intervalsx,*values):
+def calculate_hists(n,name,intervalsx,intervalsy,*values):
     hists = []
     for i in range(n-1):
         values_i = values[0][:,i:i+2]
-        prob_xi_xi1 = calculate_cond_xi_xi1(values_i,intervalsx)
+        if len(values) > 1:
+            values_i = np.concatenate((values[0][:,i:i+1],values[1][:,i+1:i+2]),axis=1)
+        hist = calculate_cond_xi_xi1(values_i,intervalsx,intervalsy)
 
-        hist = np.zeros((len(intervalsx),len(intervalsx)))
-        for j,ps in prob_xi_xi1.items():
-            for k,p in ps.items():
-                hist[j][k] = p
+        # hist = np.zeros((len(intervalsy),len(intervalsx)))
+        # for j,ps in prob_xi_xi1.items():
+        #     for k,p in ps.items():
+        #         hist[j][k] = p
 
-        hists.append((hist,intervalsx,intervalsx))
+        hists.append((hist,intervalsy,intervalsx))
     return name,hists
 
-# TODO
-def get_i(V,intervals):
-    idxs = []
-    for v in V:
-        for k in range(len(intervals)-1):
-            if v > intervals[k] and v <= intervals[k+1]:
-                idxs.append(k)
-                break
-    idxs = np.asarray(idxs)
-    return idxs
-
-# TODO
-def plot_intervals_slopes(slopes,intervals,n):
-    # PARA HISTOGRAMA DO SLOPE POR INTERVAL
-    fig_hist = plt.figure(figsize=(5,20))
-    fig_heat = plt.figure(figsize=(5,20))
-    for i in range(n):
-        slopes_i = slopes[:,i]
-        intervals_i = intervals[:,i]
-        slopes_i = get_i(slopes_i,intervalsx)
-        intervals_i = get_i(intervals_i,intervalsy)
-        
-        hist = np.zeros((len(intervalsx),len(intervalsy)))
-        for x,y in zip(slopes_i,intervals_i):
-            hist[x][y] += 1
-        print(hist)
-        sub_plot_hist(hist,intervalsy,intervalsx,'intervals'+str(i),'slopes'+str(i),nx,ny,fig_hist,fig_heat,i+1,deltay,deltax)
-    fig_hist.tight_layout()
-    fig_hist.savefig('slope_interval_hist.pdf',format='pdf')
-    fig_heat.tight_layout()
-    fig_heat.savefig('slope_interval_heat.pdf',format='pdf')
-
 def calculate_all_hists(slopes,intervals,n,intervalsx,intervalsy):
-    hists_x = calculate_hists(n,'slopes',intervalsx,slopes)
-    hists_y = calculate_hists(n,'intervals',intervalsy,intervals)
-    return hists_x,hists_y
+    hists_x = calculate_hists(n,'slopes',intervalsx,intervalsx,slopes)
+    hists_y = calculate_hists(n,'intervals',intervalsy,intervalsy,intervals)
+    hists_xy = calculate_hists(n,'slopes_intervals',intervalsx,intervalsy,slopes,intervals)
+    hists_yx = calculate_hists(n,'intervals_slopes',intervalsy,intervalsx,intervals,slopes)
+    return hists_x,hists_y,hists_xy,hists_yx
 
 def plot_hists(fig,name,hists,header,plot_func):
     n = len(hists)
@@ -127,6 +83,18 @@ def plot_all_hists(header,*args):
 def generate_hist_plots(slopes,intervals,n,header,args):
     hists = calculate_all_hists(slopes,intervals,n,*args)
     plot_all_hists(header,*hists)
+
+def plot_hist2d(X,Y):
+    plt.bar(X, height=Y)
+    plt.ylabel('No of times')
+    plt.show()
+
+def generate_freq_slopes_plot(filename):
+    ls = []
+    _,slopes,_,_ = read_original_breakpoints(filename,None)
+    for x in slopes:
+        ls.append(len(x))
+    plot_hist2d(*np.unique(ls,return_counts=True))
 
 '''
 
