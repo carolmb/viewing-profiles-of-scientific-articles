@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from mpl_toolkits.mplot3d import Axes3D
 from artificial_data import calculate_cond_xi_xi1
+from read_file import read_original_breakpoints
 
 def plot_heat(ax,hist,xedges,yedges,labelx,labely):
     nx = len(xedges)
@@ -84,7 +85,7 @@ def generate_hist_plots(slopes,intervals,n,header,args):
     hists = calculate_all_hists(slopes,intervals,n,*args)
     plot_all_hists(header,*hists)
 
-def plot_hist2d(X,Y):
+def plot_hist_int(X,Y):
     plt.bar(X, height=Y)
     plt.ylabel('No of times')
     plt.show()
@@ -94,7 +95,7 @@ def generate_freq_slopes_plot(filename):
     _,slopes,_,_ = read_original_breakpoints(filename,None)
     for x in slopes:
         ls.append(len(x))
-    plot_hist2d(*np.unique(ls,return_counts=True))
+    plot_hist_int(*np.unique(ls,return_counts=True))
 
 '''
 

@@ -1,95 +1,95 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-from igraph import *
-from scipy import stats
-from collections import defaultdict
-from analise_breakpoints import read_file_original
 
-def read_file(samples_breakpoints='data/breakpoints_k4it.max100stop.if.errorFALSE.txt'):
-    samples_breakpoints = open(samples_breakpoints,'r').read().split('\n')[:-1]
-    total_series = len(samples_breakpoints)
-    slopes = []
-    breakpoints = []
-    idxs = []
-    for i in range(0,total_series,3):
-        idx = int(samples_breakpoints[i]) - 1
-        
-        slopes_i = [float(n) for n in samples_breakpoints[i+1].split(' ')]
-        breakpoints_i = [float(n) for n in samples_breakpoints[i+2].split(' ')]
-        
-        idxs.append(idx)
-        slopes.append(np.asarray(slopes_i))
-        breakpoints.append(np.asarray(breakpoints_i))
+from changes import norm
+
+def get_window(X,Y,b,window_value):
+    n = len(Y)
+
+    pos = None
+    for i in range(n):
+        if X[i] <= b and X[i+1] > b:
+            pos = i
+            break 
+
+    values = Y[max(0,pos-window_value):min(pos+window_value,n-1)]
     
-    return np.asarray(idxs),np.asarray(slopes),np.asarray(breakpoints)
+    mean = np.mean(values)
 
-xs,ys = read_file_original(filename='data/plos_one_data_total.txt')
-idxs,slopes,breakpoints = read_file('data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_filtered.txt')
+    if pos-window_value < 0:
+        values = np.concatenate([np.full(abs(pos-window_value),mean),values])
+    if pos+window_value > n-1:
+        values = np.concatenate([values,np.full(abs(pos+window_value-n+1),mean)])
 
-# for x,y in zip(xs[:100],ys[:100]):
-#     print(x,y)
+    return values
 
-def plot_hist(visualizations,filename):
-    n, bins, patches = plt.hist(visualizations, 20, density=True, facecolor='g', alpha=0.75)
-    plt.yscale('log')
-    plt.savefig(filename)
-    plt.cla()
+def delta_std(data,window_value,is_norm):
+    delta_points = {1:[],-1:[]}
+    delta_stds = {1:[],-1:[]}
+    for sample in data:
+        idx = sample[0]
 
-# return indexes
-def group_by_num_vis(ys,k1,k2):
-    groups = defaultdict(lambda:[])
-    deleted = []
-    for i,y in enumerate(ys):
-        if y > k1:
-            if y < k2:
-                groups[1].append(i)
-            else:
-                groups[2].append(i)
-        else:
-            deleted.append(i)
-    return groups,deleted
+        X = sample[3][1:]
+        Y = sample[4][1:]
+        if is_norm:
+            X = norm(X)
+            Y = norm(Y)
 
-visualizations = np.asarray([y[-1] for y in ys])
-print(stats.describe(visualizations))  
-plot_hist(visualizations,'hist_all_data.png')
+        Y_pred = sample[-1]
+        slopes = sample[1]
+        b_points = sample[2]
+        
+        for i,b in enumerate(b_points):
+            key = 1 if slopes[i+1] - slopes[i] > 0 else -1
 
-groups,deleted = group_by_num_vis(visualizations,1000,5000)
+            diffs = get_window(X,np.absolute(Y-Y_pred),b,window_value)
+            std = np.std(diffs)
+            
+            delta_points[key].append(diffs)
+            delta_stds[key].append(std)
+            
+    return delta_points,delta_stds
 
-deleted_delta_time = []
-for d in deleted:
-    x = xs[d]
-    delta = x[-1]-x[0]
-    deleted_delta_time.append(delta)
-plot_hist(deleted_delta_time,'hist_deleted_articles.png')
+def plot_hists(data,window,is_norm):
+    print(window)
 
-idxs = idxs.tolist()
+    delta_points,delta_stds = delta_std(data,window,is_norm)
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 3),sharey=True)
+    curve_pos_std = np.nanmean(delta_stds[1])
 
-def get_b_pos(b):
-    for i,v in enumerate([0.2,0.4,0.6,0.8,1]):
-        if b < v:
-            return i
-    print(b)
+    print(curve_pos_std)
+    print(min(delta_stds[1]),max(delta_stds[1]))
 
-for k,v in groups.items():
-    ys_v = visualizations[v]
-    print(k,stats.describe(ys_v))
-    plot_hist(ys_v,'hist_group_'+str(k)+'.png')
+    ax1.hist(delta_stds[1], 10, density=True, facecolor='g', alpha=0.75, range=(0,0.02))
+    ax1.set_title('Curve (positive) std mean = %.4f '% curve_pos_std)
+    
+    curve_neg_std = np.nanmean(delta_stds[-1])
+    
+    print(curve_neg_std)
+    print(min(delta_stds[-1]),max(delta_stds[-1]))
 
-    breakpoints_freq = []
-    # print(v[:10])
-    # print(idxs[:10])
-    freqs_by_n = defaultdict(lambda:[])
-    for i in v:
-        try:
-            i = idxs.index(i)
-            n = len(breakpoints[i])
-            breakpoints_freq.append(n)
-            for b in breakpoints[i]:
-                freqs_by_n[n].append(get_b_pos(b))
-        except:
-            pass
-    plot_hist(breakpoints_freq,'hist_breakpoints_freq_'+str(k)+'.png')
-    for n,freqs in freqs_by_n.items():
-        plot_hist(freqs,'hist_freq_breaklocation_'+str(n)+'_group_'+str(k)+'.png')
+    ax2.hist(delta_stds[-1], 10, density=True, facecolor='g', alpha=0.75, range=(0,0.02))
+    ax2.set_title('Curve (negative) std mean = %.4f '% curve_neg_std)
+    
+    fig.suptitle(window)
+    fig.savefig('imgs/hist%d.png' % window)
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 3),sharey=True)
+    
+    ys1 = np.nanmean(delta_points[1],axis=0)
+    std1 = np.nanstd(delta_points[1],axis=0)
+    
+    xs = list(range(2*window))
+    ax1.errorbar(xs,ys1,yerr=std1)
+    ax1.scatter(xs,ys1)
+    ax1.set_title('Curve (positive)')
+    
+    ys2 = np.nanmean(delta_points[-1],axis=0)
+    std2 = np.nanstd(delta_points[-1],axis=0)
+    
+    ax2.errorbar(xs,ys2,yerr=std2)
+    ax2.scatter(xs,ys2)
+    ax2.set_title('Curve (negative)')
+    fig.savefig('imgs/hist_curve%d.png' % window)
 
