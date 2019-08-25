@@ -1,5 +1,5 @@
 
-f_input = 'data/plos_one_total_breakpoints_k4_original0_data.txt'
+f_input = 'data/plos_one_total_breakpoints_k4_original1_data.txt'
 
 inp = open(f_input,'r').read().split('\n')
 

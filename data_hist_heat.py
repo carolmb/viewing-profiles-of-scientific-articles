@@ -85,18 +85,6 @@ def generate_hist_plots(slopes,intervals,n,header,args):
     hists = calculate_all_hists(slopes,intervals,n,*args)
     plot_all_hists(header,*hists)
 
-def plot_hist_int(X,Y):
-    plt.bar(X, height=Y)
-    plt.ylabel('No of times')
-    plt.show()
-
-def generate_freq_slopes_plot(filename):
-    ls = []
-    _,slopes,_,_ = read_original_breakpoints(filename,None)
-    for x in slopes:
-        ls.append(len(x))
-    plot_hist_int(*np.unique(ls,return_counts=True))
-
 '''
 
     fig_slopes.suptitle('slopes')

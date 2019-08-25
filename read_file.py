@@ -1,21 +1,27 @@
+# -*- coding: utf-8 -*-
 import numpy as np
+from stasts import filter_outliers
 
 '''
 lê os arquivos originais com as séries temporais
 '''
 def read_file_original(filename):
-    samples_breakpoints = open(filename,'r').read().split('\n')[:-1]
-    total_series = len(samples_breakpoints)
-    X = []
-    Y = []
-    for i in range(0,total_series,2):
-        xs = [float(n) for n in samples_breakpoints[i].split(',')]
-        ys = [float(n) for n in samples_breakpoints[i+1].split(',')]
-        
-        X.append(np.asarray(xs))
-        Y.append(np.asarray(ys))
-    
-    return np.asarray(X),np.asarray(Y)
+	samples_breakpoints = open(filename,'r').read().split('\n')[:-1]
+	total_series = len(samples_breakpoints)
+	X = []
+	Y = []
+	for i in range(0,total_series,2):
+		if samples_breakpoints[i] == '':
+			xs = []
+			ys = []
+		else:
+			xs = [float(n) for n in samples_breakpoints[i].split(',')]
+			ys = [float(n) for n in samples_breakpoints[i+1].split(',')]
+
+		X.append(np.asarray(xs))
+		Y.append(np.asarray(ys))
+
+	return np.asarray(X),np.asarray(Y)
 
 '''
 lê as séries de slopes/intervalos geradas artificialmente a partir de modelo
@@ -96,3 +102,30 @@ def preprocess_original_breakpoints(filename,n):
     slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
 
     return idxs,slopes,intervals
+
+def load_data(filename='data/plos_one_total_breakpoints_k4_original1_data_filtered.txt'):
+    xs,ys = read_file_original(filename='data/plos_one_data_total.txt')
+    idxs,slopes,breakpoints,preds = read_original_breakpoints(filename,None)
+    slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
+    idxs = idxs.tolist()
+
+    data = []
+    for i,s,b,p in zip(idxs,slopes,breakpoints,preds):
+        data.append((i,s,b,xs[i],ys[i],p))
+    data = np.asarray(data)
+    
+    return data
+
+def select_original_breakpoints(N):
+    data = load_data()
+    data = filter_outliers(data)
+
+    slopes = []
+    intervals = []
+    for i,s,b,xs,ys,p in data:
+        if len(s) == N:
+            slopes.append(s)
+            intervals.append(np.asarray(breakpoints2intervals(b)))
+    slopes = np.asarray(slopes)
+    intervals = np.asarray(intervals)
+    return slopes,intervals

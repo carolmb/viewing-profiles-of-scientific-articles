@@ -1,6 +1,6 @@
 import numpy as np
 from collections import defaultdict
-from read_file import preprocess_original_breakpoints,save
+from read_file import preprocess_original_breakpoints,save,select_original_breakpoints
 
 def calculate_cond_xi_xi1(X,intervalsx,intervalsy):
     prob_xi = defaultdict(lambda:0)
@@ -83,10 +83,10 @@ def artificial_series(X,intervalsx,n,samples):
     
     return series_slopes
 
-def generate_artificial_data(original_filename,Ns,samples,intervalsx,intervalsy,maxx,folder):
+def generate_artificial_data(Ns,samples,intervalsx,intervalsy,maxx,folder):
 
     for n in Ns:
-        idxs,slopes,intervals = preprocess_original_breakpoints(original_filename,n)
+        slopes,intervals = select_original_breakpoints(n)
 
         # INTERVALO SEGUINDO PROB COND/ANGULO MEDIO DE CADA INTERVALO
         mean_slopes = np.mean(slopes,axis=0)

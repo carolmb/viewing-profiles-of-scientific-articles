@@ -1,7 +1,7 @@
 import glob
 import numpy as np
 from scipy import stats
-from read_file import preprocess_original_breakpoints,read_artificial_breakpoints
+from read_file import select_original_breakpoints,read_artificial_breakpoints
 
 def Score(X,num_obj_cat):
     """
@@ -67,8 +67,10 @@ def norm_data(slopes_original,intervals_original,slopes_artificial,intervals_art
 
 def score_all_files(filenames,original_data_filename,Ns):
     for n,f in zip(Ns,filenames):
+        if n != 5:
+            continue
         print(f)
-        _,slopes_original,intervals_original = preprocess_original_breakpoints(original_data_filename,n)
+        slopes_original,intervals_original = select_original_breakpoints(n)
         _,slopes_artificial,intervals_artificial = read_artificial_breakpoints(f)
         
         original,artificial,all_data = norm_data(slopes_original,intervals_original,slopes_artificial,intervals_artificial)
@@ -78,13 +80,13 @@ def score_all_files(filenames,original_data_filename,Ns):
             print('Error',f)
 
 base = [2,3,4,5]
-print('original0')
-filenames = sorted(glob.glob('data/original0/*_test.txt'))
+print('original1')
+filenames = sorted(glob.glob('data/original1/*_test.txt'))
 Ns = []
 c = int(len(filenames)/len(base))
 for _ in range(c):
     Ns += base
-original_data_filename = 'data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_original0_data_filtered.txt'
+original_data_filename = 'data/plos_one_total_breakpoints_k4_original1_data_filtered.txt'
 score_all_files(filenames,original_data_filename,Ns)
 
 # print()
