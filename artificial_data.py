@@ -93,30 +93,30 @@ def generate_artificial_data(Ns,samples,intervalsx,intervalsy,maxx,folder):
         articifial_xs = artificial_series(intervals,intervalsy,n,samples)
         mean_slopes = [mean_slopes.tolist()]*samples
         articifial_xs = np.asarray(articifial_xs)
-        save(mean_slopes,articifial_xs,'data/'+folder+'/plos_one_artificial_intervals_slope_axis0_'+str(n)+'_test.txt')
+        save(mean_slopes,articifial_xs,'data/'+folder+'/plos_one_2019_artificial_intervals_slope_axis0_'+str(n)+'_test.txt')
 
         # INTERVALO SEGUINDO PROB COND/ANGULO ALEATÓRIO DE CADA INTERVALO
         artificial_slopes = np.random.choice(slopes.flatten(),size=samples*n).reshape(samples,n)
-        save(artificial_slopes,articifial_xs,'data/'+folder+'/plos_one_artificial_intervals_slope_random_'+str(n)+'_test.txt')
+        save(artificial_slopes,articifial_xs,'data/'+folder+'/plos_one_2019_artificial_intervals_slope_random_'+str(n)+'_test.txt')
 
         # # TUDO ALEATORIO (qualquer eixo)
         artificial_slopes = (np.random.rand(samples,n)*maxx)
         artificial_intervals = np.random.rand(samples,n)
-        save(artificial_slopes,artificial_intervals,'data/'+folder+'/plos_one_artificial_all_random_'+str(n)+'_test.txt')
+        save(artificial_slopes,artificial_intervals,'data/'+folder+'/plos_one_2019_artificial_all_random_'+str(n)+'_test.txt')
 
         # SLOPES SEGUINDO PROB COND/ANGULO MEDIO DE CADA INTERVALO
         mean_intervals = np.mean(intervals,axis=0)
         articifial_slopes = artificial_series(slopes,intervalsx,n,samples)
         mean_intervals = [mean_intervals.tolist()]*samples
         mean_intervals = np.asarray(mean_intervals)
-        save(articifial_slopes,mean_intervals,'data/'+folder+'/plos_one_artificial_slopes_interval_axis0_'+str(n)+'_test.txt')
+        save(articifial_slopes,mean_intervals,'data/'+folder+'/plos_one_2019_artificial_slopes_interval_axis0_'+str(n)+'_test.txt')
 
         # # INTERVALO SEGUINDO PROB COND/ANGULO ALEATÓRIO DE CADA INTERVALO
         artificial_intervals = np.random.choice(intervals.flatten(),size=samples*n).reshape(samples,n)
-        save(articifial_slopes,artificial_intervals,'data/'+folder+'/plos_one_artificial_slopes_interval_random_'+str(n)+'_test.txt')
+        save(articifial_slopes,artificial_intervals,'data/'+folder+'/plos_one_2019_artificial_slopes_interval_random_'+str(n)+'_test.txt')
 
         # INTERVALOS E SLOPES SEGUINDO O MODELO
         articifial_intevals = artificial_series(intervals,intervalsy,n,samples)        
         # articifial_intevals = np.asarray(articifial_intevals)
         articifial_slopes = artificial_series(slopes,intervalsx,n,samples)
-        save(articifial_slopes,articifial_intevals,'data/'+folder+'/plos_one_artificial_intervals_slopes_'+str(n)+'_test.txt')
+        save(articifial_slopes,articifial_intevals,'data/'+folder+'/plos_one_2019_artificial_intervals_slopes_'+str(n)+'_test.txt')

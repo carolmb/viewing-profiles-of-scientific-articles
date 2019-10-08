@@ -28,17 +28,17 @@ if __name__ == "__main__":
 
     args = [intervalsx,intervalsy]
 
-    # xs,ys = read_file_original(filename='data/plos_one_data_total.txt')
+    # xs,ys = read_file_original(filename='data/plos_one_2019.txt')
     # xs = np.asarray([norm(x) for x in xs])
     # ys = np.asarray([norm(y) for y in ys])
 
-    filename = 'data/plos_one_total_breakpoints_k4_original1_data_filtered.txt'
+    filename = 'data/plos_one_2019_breakpoints_k4_original1_data_filtered.txt'
     
-    # for n in [2,3,4,5]:
-    #     slopes,intervals = select_original_breakpoints(n)
-    #     generate_freq_plots(slopes,intervals,n,'imgs/original1/scatter_')
-    #     generate_hist_plots(slopes,intervals,n,'imgs/original1/',args)
+    for n in [2,3,4,5]:
+        slopes,intervals = select_original_breakpoints(n)
+        generate_freq_plots(slopes,intervals,n,'imgs/original1/scatter_')
+        generate_hist_plots(slopes,intervals,n,'imgs/original1/',args)
 
-    samples = 10000
-    Ns = [2,3,4,5]
-    generate_artificial_data(Ns,samples,intervalsx,intervalsy,maxx,'original1')
+    # samples = 10000
+    # Ns = [2,3,4,5]
+    # generate_artificial_data(Ns,samples,intervalsx,intervalsy,maxx,'original1')

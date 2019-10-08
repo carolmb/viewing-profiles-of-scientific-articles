@@ -1,27 +1,30 @@
 # -*- coding: utf-8 -*-
+import json
 import numpy as np
 from stasts import filter_outliers
 
 '''
 lê os arquivos originais com as séries temporais
 '''
-def read_file_original(filename):
-	samples_breakpoints = open(filename,'r').read().split('\n')[:-1]
-	total_series = len(samples_breakpoints)
-	X = []
-	Y = []
-	for i in range(0,total_series,2):
-		if samples_breakpoints[i] == '':
-			xs = []
-			ys = []
-		else:
-			xs = [float(n) for n in samples_breakpoints[i].split(',')]
-			ys = [float(n) for n in samples_breakpoints[i+1].split(',')]
+# def read_file_original(filename):
+# 	samples_breakpoints = open(filename,'r').read().split('\n')[:-1]
+# 	total_series = len(samples_breakpoints)
+# 	dois = []
+#     X = []
+# 	Y = []
+# 	for i in range(0,total_series,3):
+# 		if samples_breakpoints[i+1] == '':
+# 			xs = []
+# 			ys = []
+# 		else:
+# 			xs = [float(n) for n in samples_breakpoints[i+1].split(',')]
+# 			ys = [float(n) for n in samples_breakpoints[i+2].split(',')]
 
-		X.append(np.asarray(xs))
-		Y.append(np.asarray(ys))
+#         dois.append(samples_breakpoints[i])
+# 		X.append(np.asarray(xs))
+# 		Y.append(np.asarray(ys))
 
-	return np.asarray(X),np.asarray(Y)
+# 	return dois,np.asarray(X),np.asarray(Y)
 
 '''
 lê as séries de slopes/intervalos geradas artificialmente a partir de modelo
@@ -60,7 +63,7 @@ def read_original_breakpoints(filename,N):
     idxs = []
     preds = []
     for i in range(0,total_series,4):
-        idx = int(samples_breakpoints[i]) - 1
+        idx = samples_breakpoints[i]
         
         slopes_i = [float(n) for n in samples_breakpoints[i+1].split(' ')]
         breakpoints_i = [float(n) for n in samples_breakpoints[i+2].split(' ')]
@@ -103,15 +106,23 @@ def preprocess_original_breakpoints(filename,n):
 
     return idxs,slopes,intervals
 
-def load_data(filename='data/plos_one_total_breakpoints_k4_original1_data_filtered.txt'):
-    xs,ys = read_file_original(filename='data/plos_one_data_total.txt')
+def load_data(filename='data/plos_one_2019_breakpoints_k4_original1_data_filtered.txt'):
+    # dois,xs,ys = read_file_original(filename='data/plos_one_2019.txt')
+    data_filename = 'data/papers_plos_data_time_series2_filtered.json'
+    data = open(data_filename,'r').read()
+    data_json = json.loads(data)
+
     idxs,slopes,breakpoints,preds = read_original_breakpoints(filename,None)
     slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
     idxs = idxs.tolist()
 
     data = []
     for i,s,b,p in zip(idxs,slopes,breakpoints,preds):
-        data.append((i,s,b,xs[i],ys[i],p))
+        xs = data_json[i]['time_series']['months']
+        xs = np.asarray([float(x) for x in xs])
+        ys = data_json[i]['time_series']['views']
+        ys = np.asarray([float(y) for y in ys])
+        data.append((i,s,b,xs,ys,p))
     data = np.asarray(data)
     
     return data

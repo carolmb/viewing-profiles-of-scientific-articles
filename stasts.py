@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
 def plot_hist_int(X,Y,filename,xlabel):
-    plt.bar(X, height=Y)
+    plt.bar(X, height=Y, color='#028090',width=0.5)
     plt.locator_params(axis='x',integer=MaxNLocator(integer=True))
-    plt.xlabel(xlabel)
-    plt.ylabel('occurrences')
+    plt.xlabel(xlabel,fontsize=14)
+    plt.ylabel('occurrences',fontsize=14)
     plt.savefig(filename+'.pdf')
     plt.clf()
 
@@ -25,9 +25,9 @@ def get_no_of_intervals(data):
 	return intervals
 
 def plot_hist_real(X,bins,filename,xlabel,ylabel):
-	plt.hist(X,bins=bins)
-	plt.xlabel(xlabel)
-	plt.ylabel(ylabel)
+	plt.hist(X,bins=bins,color='#028090')
+	plt.xlabel(xlabel,fontsize=14)
+	plt.ylabel(ylabel,fontsize=14)
 	plt.savefig(filename+'.pdf')
 	plt.clf()
 

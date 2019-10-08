@@ -38,9 +38,14 @@ def plot_breakpoints(X,Y,b_points):
     plt.vlines(b_points,ymin=Y_min,ymax=Y_max,color='blue')
     n = len(X)
 
+    print(b_points)
+
     for b in b_points:
         for i in range(n-1):
             if X[i] <= b and X[i+1] > b:
+                pos = i
+                break
+            if X[i] >= b_points[-1]:
                 pos = i
                 break
 
@@ -48,6 +53,7 @@ def plot_breakpoints(X,Y,b_points):
         plt.vlines(windows,ymin=Y_min,ymax=Y_max,color='gray',linestyle='--')
 
 def plot_original_vs_pred(X,Y,Y_pred,b_points,n_intervals,idx,header):
+    print(len(X),len(Y_pred),len(Y))
     plot(X,Y_pred,'red')
     plot(X,Y,'green')
     
@@ -72,6 +78,7 @@ def plot_jumps(data,is_norm,reverse,header):
     for n_intervals,ranking in rankings.items():
         for sample in ranking:
             idx = sample[0]
+            idx = idx.replace('/','_')
 
             X = sample[3][1:]
             Y = sample[4][1:]
@@ -80,8 +87,8 @@ def plot_jumps(data,is_norm,reverse,header):
                 Y = norm(Y)
 
             Y_pred = sample[-1]
-            b_points = sample[2]
-            
+            b_points = [min(X)] + sample[2].tolist()
+
             plot_original_vs_pred(X,Y,Y_pred,b_points,n_intervals,idx,header)
 
             plot_diff_original_vs_pred(X,Y,Y_pred,b_points,n_intervals,idx,header)

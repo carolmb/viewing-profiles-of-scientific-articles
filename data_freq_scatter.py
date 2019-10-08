@@ -4,12 +4,14 @@ import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
 from sklearn.utils.random import sample_without_replacement
 
-def plot_scatter(ax,X,Y,title):
+def plot_scatter(ax,X,Y,title,name):
     ax.scatter(X,Y,alpha=0.3)
     # ax.plot([0,1],[1,0],'k')
     ax.title.set_text(title)
     # ax.set_xlim((0,1))
     # ax.set_ylim((0,1))
+    ax.set_xlabel('x '+name.split('_')[0])
+    ax.set_ylabel('x+1 '+name.split('_')[-1])
 
 def freq_xi_xi1(X):
     pointx = []
@@ -54,8 +56,9 @@ def plot_freqs(fig,name_freqs,header):
     for i,(X,Y,pearson) in enumerate(freqs):
         ax = fig.add_subplot(n,1,i+1)
         title = str(i+1) + ' (pearson=' + str(pearson)[:9]+')'
-        plot_scatter(ax,X,Y,title)
-    fig.suptitle(name)
+        plot_scatter(ax,X,Y,title,name)
+    fig.tight_layout(pad=0.5, w_pad=0.5, h_pad=1.2)
+    # fig.suptitle(name)
     fig.savefig(header+name+"_"+str(n+1)+".pdf",format='pdf',bbox_inches='tight')
 
 def plot_all_freqs(header,*args):

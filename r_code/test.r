@@ -4,99 +4,109 @@ library(Metrics)
 # p-value for breakpoints
 # order by mse
 
-fileName <- "../data/plos_one_data_total.txt"
+fileName <- "../data/plos_one_2019.txt"
 conn <- file(fileName,open="r")
 linn <-readLines(conn)
-data<-vector("list",length(linn)/2)
-for (i in seq(1,length(linn),by=2)){
-  months<-as.numeric(strsplit(linn[i],',')[[1]])
-  views<-as.numeric(strsplit(linn[i+1],',')[[1]])
-  data[[(i+1)/2]]<-list(months=months,views=views)
-}
-close(conn)
+data<-vector("list",length(linn)/3)
 
-normalize <- function(x) {
-	temp <- ((x - min(x)) / (max(x) - min(x)))
-	return (temp)
-}
+x <- length(linn)/3
+print(x)
 
-get_segmented <- function(dati,filename,itmax,k,stopiferror,nboot,yy,i,xx) {
-	result <- tryCatch({
+# for (i in seq(1,length(linn),by=3)){
+#   doi<-linn[i]
+#   print(doi)
+#   months<-as.numeric(strsplit(linn[i+1],',')[[1]])
+#   views<-as.numeric(strsplit(linn[i+2],',')[[1]])
+#   data[[(i+1)/2]]<-list(doi=doi,months=months,views=views)
+# }
+# close(conn)
+
+# normalize <- function(x) {
+# 	temp <- ((x - min(x)) / (max(x) - min(x)))
+# 	return (temp)
+# }
+
+# get_segmented <- function(dati,doi,filename,itmax,k,stopiferror,nboot,yy,i,xx) {
+# 	result <- tryCatch({
 
 
-	    out.lm<-lm(y~x,data=dati)
+# 	    out.lm<-lm(y~x,data=dati)
 
-	    o<-segmented(out.lm, seg.Z=~x, psi=NA, control=seg.control(it.max=itmax, display=FALSE,K=k, stop.if.error=stopiferror, n.boot=nboot))
-		y.mse <- mse(yy,broken.line(o,link=FALSE)$fit)
+# 	    o<-segmented(out.lm, seg.Z=~x, psi=NA, control=seg.control(it.max=itmax, display=FALSE,K=k, stop.if.error=stopiferror, n.boot=nboot))
+# 		y.mse <- mse(yy,broken.line(o,link=FALSE)$fit)
+# 		if (y.mse >= 0.0001) {
 
-		if (y.mse >= 0.0001) {
-		# y.mape <- mape(yy,broken.line(o,link=FALSE)$fit)
-		# if (y.mape >= 0.02) {
-		# 	# jpeg(paste('ge/',i))
-		# 	# plot(o)
+# 		# y.mape <- mape(yy,broken.line(o,link=FALSE)$fit)
+# 		# if (y.mape >= 0.02) {
+# 		# 	# jpeg(paste('ge/',i))
+# 		# 	# plot(o)
 			
-		# 	# lines(xx,yy,col='green')
-		# 	# dev.off()
-		# 	print('if')
-		} else {
-			slopes<-slope(o)$x[,1]
+# 		# 	# lines(xx,yy,col='green')
+# 		# 	# dev.off()
+# 		# 	print('if')
+# 		} else {
+# 			slopes<-slope(o)$x[,1]
 
-			# print(slopes)
-			# plot(o)
-			# lines(xx,yy,col='green')
+# 			# print(slopes)
+# 			# plot(o)
+# 			# lines(xx,yy,col='green')
 			
-			breakpoints<-o$psi[,2]
-			pred<-predict(o)
-			write(i, file = filename, append = TRUE)
-			write.table(t(slopes), file = filename, append = TRUE, col.names=FALSE, row.names=FALSE)
-			write.table(t(breakpoints), file = filename, append = TRUE, col.names=FALSE, row.names=FALSE)
-			write.table(t(pred), file = filename, append = TRUE, col.names=FALSE, row.names=FALSE)
+# 			breakpoints<-o$psi[,2]
+# 			pred<-predict(o)
+# 			write(doi, file = filename, append = TRUE)
+# 			write.table(t(slopes), file = filename, append = TRUE, col.names=FALSE, row.names=FALSE)
+# 			write.table(t(breakpoints), file = filename, append = TRUE, col.names=FALSE, row.names=FALSE)
+# 			write.table(t(pred), file = filename, append = TRUE, col.names=FALSE, row.names=FALSE)
 			
-			# jpeg(paste('ls/',i))
-			# plot(o)
+# 			# jpeg(paste('ls/',i))
+# 			# plot(o)
 			
-			# lines(xx,yy,col='green')
-			# dev.off()
-		# 	print('else')
-		}
+# 			# lines(xx,yy,col='green')
+# 			# dev.off()
+# 		# 	print('else')
+# 		}
 
-		return (o)
+# 		return (o)
 
-	}, error = function(e) {
-		print(paste("MY_ERROR:  ",e))
-		return ('')
-	})
-	return (result)
-}
+# 	}, error = function(e) {
+# 		print(paste("MY_ERROR:  ",e))
+# 		return ('')
+# 	})
+# 	return (result)
+# }
 
-tests <- function(itmax,k,stopiferror) {
-	filename <- paste("../data/plos_one_total_breakpoints_k",toString(k),"_original0_data.txt",sep="")
-	conn <- file(filename,open="w")
-	close(conn)
+# tests <- function(itmax,k,stopiferror) {
+# 	filename <- paste("../data/plos_one_2019_breakpoints_k4_original1_data.txt",sep="")
+# 	conn <- file(filename,open="w")
+# 	close(conn)
   
-	nboot <- 0
-	if (stopiferror) {
-		nboot <- 5
-	}
-	vector.mse <- c()
-	vector.p.value <- c()
-	for (i in seq(1,length(linn)/2)){
-		if (i%%1000==0){
-		  print(i)
-		}
+# 	nboot <- 0
+# 	if (stopiferror) {
+# 		nboot <- 5
+# 	}
+# 	vector.mse <- c()
+# 	vector.p.value <- c()
+# 	for (i in seq(1,length(linn)/2)){
+# 		if (i%%1000==0){
+# 		  print(i)
+# 		}
         
-		xx<-normalize(data[[i]]$months)
-		yy<-normalize(data[[i]]$views)
 		
-		# xx<-data[[i]]$months[2:length(data[[i]]$months)]
-		# yy<-data[[i]]$views[2:length(data[[i]]$views)]
+# 		xx<-data[[i]]$months[2:length(data[[i]]$months)]
+# 		yy<-data[[i]]$views[2:length(data[[i]]$views)]
 		
-		dati<-data.frame(x=xx,y=yy)
+# 		xx<-normalize(data[[i]]$months)
+# 		yy<-normalize(data[[i]]$views)
 		
-		y<-get_segmented(dati,filename,itmax,k,stopiferror,nboot,yy,i,xx)
-	}
-}
+# 		print(xx)
+# 		print(yy)
 
+# 		dati<-data.frame(x=xx,y=yy)
+		
+# 		y<-get_segmented(dati,doi=data[[i]]$doi,filename,itmax,k,stopiferror,nboot,yy,i,xx)
+
+#     }
+# }
 
 
 # tests(100,3,FALSE)

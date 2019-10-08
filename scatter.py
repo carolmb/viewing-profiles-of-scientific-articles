@@ -65,10 +65,9 @@ def norm_data(slopes_original,intervals_original,slopes_artificial,intervals_art
     all_data = (all_data - m)/std
     return original_data,artificial_data,all_data
 
-def score_all_files(filenames,original_data_filename,Ns):
-    for n,f in zip(Ns,filenames):
-        if n != 5:
-            continue
+def score_all_files(filenames,original_data_filename):
+    for i,f in enumerate(filenames):
+        n = 2 + i%4
         print(f)
         slopes_original,intervals_original = select_original_breakpoints(n)
         _,slopes_artificial,intervals_artificial = read_artificial_breakpoints(f)
@@ -79,15 +78,11 @@ def score_all_files(filenames,original_data_filename,Ns):
         except:
             print('Error',f)
 
-base = [2,3,4,5]
-print('original1')
-filenames = sorted(glob.glob('data/original1/*_test.txt'))
-Ns = []
-c = int(len(filenames)/len(base))
-for _ in range(c):
-    Ns += base
-original_data_filename = 'data/plos_one_total_breakpoints_k4_original1_data_filtered.txt'
-score_all_files(filenames,original_data_filename,Ns)
+# base = [2,3,4,5]
+# print('original1')
+# filenames = sorted(glob.glob('data/original1/*_test.txt'))
+# original_data_filename = 'data/plos_one_total_breakpoints_k4_original1_data_filtered.txt'
+# score_all_files(filenames,original_data_filename)
 
 # print()
 

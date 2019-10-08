@@ -29,8 +29,9 @@ def delta_std(data,window_value,is_norm):
     for sample in data:
         idx = sample[0]
 
-        X = sample[3][1:]
-        Y = sample[4][1:]
+        X = sample[3]
+        Y = sample[4]
+        # print(X)
         if is_norm:
             X = norm(X)
             Y = norm(Y)
@@ -43,6 +44,7 @@ def delta_std(data,window_value,is_norm):
             key = 1 if slopes[i+1] - slopes[i] > 0 else -1
 
             diffs = get_window(X,np.absolute(Y-Y_pred),b,window_value)
+            # print(diffs)
             std = np.std(diffs)
             
             delta_points[key].append(diffs)
@@ -55,8 +57,8 @@ def plot_hist(delta_stds,title,filename):
     fig = plt.figure(figsize=(6,3))
     curve_pos_std = np.nanmean(delta_stds)
 
-    print(curve_pos_std)
-    print(min(delta_stds),max(delta_stds))
+    # print(curve_pos_std)
+    # print(min(delta_stds),max(delta_stds))
 
     plt.hist(delta_stds, 15, density=True, facecolor='g', alpha=0.75, range=(0,0.01))
     plt.ylim((0,450))

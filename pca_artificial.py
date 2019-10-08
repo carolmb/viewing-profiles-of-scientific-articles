@@ -1,63 +1,81 @@
+import glob
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import defaultdict
 from sklearn.decomposition import PCA
-from analise_breakpoints import read_original_breakpoints,read_artificial_breakpoints
-from analise_breakpoints import breakpoints2intervals
-from scipy.stats import pearsonr
-from analise_breakpoints import read_file_original
-import glob
 
-def get_data(filename):
-    n = int(filename.split('_')[-1].split('.txt')[0])
-    _,slopes_original,breakpoints_original = read_original_breakpoints(samples_breakpoints='data/plos_one_total_breakpoints_k4it.max100stop.if.errorFALSE_original0_data_filtered.txt',n=n)
-    _,slopes_artificial,intervals_artificial = read_artificial_breakpoints(samples_breakpoints=filename)
+from scatter import Score
+from read_file import select_original_breakpoints,read_artificial_breakpoints
 
-    slopes_original = np.asarray([(np.arctan(s)*57.2958) for s in slopes_original])
-    #print(slopes_original[:1])
-    intervals_original = [breakpoints2intervals(b) for b in breakpoints_original]
+def get_data(filename,n):
+	slopes_original,intervals_original = select_original_breakpoints(n)
+	_,slopes_artificial,intervals_artificial = read_artificial_breakpoints(filename)
+	original_data = np.concatenate((slopes_original,intervals_original),axis=1)
+	artificial_data = np.concatenate((slopes_artificial,intervals_artificial),axis=1)
+	print(original_data.shape,artificial_data.shape)
 
-    print(len(slopes_original),len(intervals_original))
+	all_data = np.concatenate((original_data,artificial_data),axis=0)
+	m = np.mean(all_data,axis=0)
+	std = np.std(all_data,axis=0)
+	all_data = (all_data-m)/std
 
-    # DADOS NORMALIZADOS POR TODOS OS DADOS
-    original_data = np.concatenate((slopes_original,intervals_original),axis=1)
-    artificial_data = np.concatenate((slopes_artificial,intervals_artificial),axis=1)
-    all_data = np.concatenate((original_data,artificial_data),axis=0)
+	original_data = (original_data-m)/std
+	artificial_data = (artificial_data-m)/std
 
-    m = np.mean(all_data,axis=0)
-    std = np.std(all_data,axis=0)
-    original_data = (original_data - m)/std
-    artificial_data = (artificial_data -m)/std
-    
-    all_data = (all_data - m)/std
+	return artificial_data,original_data,all_data
 
-    return artificial_data,original_data,all_data
+def plot_pca(y1,y2,xlabel,ylabel,title,filename):
 
-def pca_fit(original,artificial,all_data,title):
-    pca = PCA(n_components=2)
-    pca.fit(all_data)
+	# plt.title(title+' original std='+ str(original_std[0])[:5]+' artificial std='+str(artificial_std[0])[:5])
+	# plt.xlabel('original std ='+str(original_std[1])[:5]+' artificial std='+str(artificial_std[1])[:5])
 
-    y1 = pca.transform(original)
-    y2 = pca.transform(artificial)
+	plt.figure()
+	plt.scatter(y1[:,0],y1[:,1],c='#307438',alpha=0.1,label='original')
+	plt.scatter(y2[:,0],y2[:,1],c='#b50912',alpha=0.1,label='artificial')
 
-    original_std = np.std(y1,axis=0)
-    artificial_std = np.std(y2,axis=0)
+	plt.title(title)
+	
+	plt.xlabel(xlabel, fontsize=14)
+	plt.ylabel(ylabel, fontsize=14)
+	plt.legend(bbox_to_anchor=(1.2,1.0))
+	plt.savefig('imgs/'+filename+'_pca.pdf',bbox_inches='tight')
+	plt.clf()
 
-    plt.figure()
-    plt.scatter(y1[:,0],y1[:,1],c='green',alpha=0.3)
-    plt.scatter(y2[:,0],y2[:,1],c='red',alpha=0.2)
-    plt.title(title+' original std='+ str(original_std[0])[:5]+' artificial std='+str(artificial_std[0])[:5])
+def get_pca_infos(original,artificial,all_data):
+	pca = PCA(n_components=2)
+	pca.fit(all_data)
 
-    plt.xlabel('original std ='+str(original_std[1])[:5]+' artificial std='+str(artificial_std[1])[:5])
+	scatter_dist = -1000
+	try:
+		scatter_dist = Score(all_data,np.array([len(original),len(artificial)]))
+	except:
+		pass
 
-    plt.show()
-    header = filename.split('/')[-1]
-    plt.savefig('imgs_python/plos_one_original0/'+header[:-4]+'_pca.png')
+	y1 = pca.transform(original)
+	y2 = pca.transform(artificial)
 
+	# original_std = np.std(y1,axis=0)
+	# artificial_std = np.std(y2,axis=0)
 
-plt.ion()
-# DADOS GERADOS PARA INTERVALOS ARTIFICIAIS (ANGULO FIXO, INTERVALO VARIANDO)
-filenames = glob.glob('data/original0/*.txt')
+	y1_explained, y2_explained = pca.explained_variance_ratio_[:2]
+	y1_explained = y1_explained*100
+	y2_explained = y2_explained*100
 
-for filename in filenames:
-    artificial_data,original_data,all_data = get_data(filename)
-    pca_fit(original_data,artificial_data,all_data,filename)
+	title = "\n(scatter dist = %.6f)" % scatter_dist
+
+	y1_label = 'PCA1 (%.2f%%)' % y1_explained
+	y2_label = 'PCA2 (%.2f%%)' % y2_explained
+
+	return y1,y2,y1_label,y2_label,title
+
+if __name__ == "__main__":
+	filenames = sorted(glob.glob('data/original1/plos_one_2019*.txt'))
+
+	for i,filename in enumerate(filenames):
+	    artificial_data,original_data,all_data = get_data(filename,2+i%4)
+	    
+	    y1,y2,y1_label,y2_label,title = get_pca_infos(artificial_data,original_data,all_data)
+	    
+	    filename = filename.split('/')[-1][:-4]
+	    title = filename + title
+	    plot_pca(y1,y2,y1_label,y2_label,title,filename)
