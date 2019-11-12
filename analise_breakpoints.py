@@ -5,7 +5,7 @@ from collections import defaultdict
 from data_freq_scatter import generate_freq_plots
 from artificial_data import generate_artificial_data,get_i
 from data_hist_heat import generate_hist_plots
-from read_file import load_data,breakpoints2intervals,select_original_breakpoints
+from read_file import select_original_breakpoints
 
 def norm(xs):
 	mmax = max(xs)
@@ -39,6 +39,5 @@ if __name__ == "__main__":
         generate_freq_plots(slopes,intervals,n,'imgs/original1/scatter_')
         generate_hist_plots(slopes,intervals,n,'imgs/original1/',args)
 
-    # samples = 10000
-    # Ns = [2,3,4,5]
-    # generate_artificial_data(Ns,samples,intervalsx,intervalsy,maxx,'original1')
+    Ns = [2,3,4,5]
+    generate_artificial_data(Ns,intervalsx,intervalsy,maxx,'original1')

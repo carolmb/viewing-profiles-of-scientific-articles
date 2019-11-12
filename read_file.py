@@ -101,7 +101,7 @@ def breakpoints2intervals(x):
     
 def preprocess_original_breakpoints(filename,n):
     idxs,slopes,breakpoints,_ = read_original_breakpoints(filename,n)
-    intervals = np.asarray([np.asarray(breakpoints2intervals(b)) for b in breakpoints])
+    intervals = np.asarray([np.asarray(b) for b in breakpoints])
     slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
 
     return idxs,slopes,intervals
@@ -112,12 +112,12 @@ def load_data(filename='data/plos_one_2019_breakpoints_k4_original1_data_filtere
     data = open(data_filename,'r').read()
     data_json = json.loads(data)
 
-    idxs,slopes,breakpoints,preds = read_original_breakpoints(filename,None)
+    idxs,slopes,intervals,preds = read_original_breakpoints(filename,None)
     slopes = np.asarray([(np.arctan(s)*57.2958) for s in slopes])
     idxs = idxs.tolist()
 
     data = []
-    for i,s,b,p in zip(idxs,slopes,breakpoints,preds):
+    for i,s,b,p in zip(idxs,slopes,intervals,preds):
         xs = data_json[i]['time_series']['months']
         xs = np.asarray([float(x) for x in xs])
         ys = data_json[i]['time_series']['views']
