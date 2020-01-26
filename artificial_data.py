@@ -83,11 +83,117 @@ def artificial_series(X,intervalsx,n,samples):
     
     return series_slopes
 
+def artificial_series_no_memory(X,intervalsx,n,samples):
+
+    x_by_i = [get_values_in_X_by_intervals(X[:,i],intervalsx) for i in range(n)]
+    
+    X_artificial = np.zeros((samples,n))
+    for i in range(n):
+        prob_i = get_prob(X[:,i],intervalsx)
+        for j in range(samples):
+            x,_ = get_slope_val(prob_i,x_by_i[i])
+            X_artificial[j][i] = x
+
+    return X_artificial
+
+def comb_prob(slopes,intervals,intervalsx,intervalsy):
+    comb = defaultdict(lambda:defaultdict(lambda:[]))
+    comb_next = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:[])))
+    prob = defaultdict(lambda:defaultdict(lambda:0))
+    prob_next = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
+    for xs,ys in zip(slopes,intervals):
+        for i,(x,y) in enumerate(zip(xs,ys)):
+            x_idx = get_i([x],intervalsx)[0]
+            y_idx = get_i([y],intervalsy)[0]
+            comb[i][(x_idx,y_idx)].append((x,y))
+            if i < len(xs)-1:
+                x1_idx = get_i([xs[i+1]],intervalsx)[0]
+                y1_idx = get_i([ys[i+1]],intervalsy)[0]
+                comb_next[i][(x_idx,y_idx)][(x1_idx,y1_idx)].append((xs[i+1],ys[i+1]))
+
+    for i,comb_i in comb.items():
+        count = 0
+        for k,v in comb_i.items():
+            comb[i][k] = np.asarray(v)
+            count += len(v)
+        total = 0.0
+        for k,v in comb_i.items():
+            prob[i][k] = len(v)/count
+            print(i,k,prob[i][k])
+            total += prob[i][k]
+        print('total',total)
+
+        for k,v_k in comb_next[i].items():
+            count = 0
+            for k1,v in v_k.items():
+                comb_next[i][k][k1] = np.asarray(v)
+                count += len(v)
+                total = 0.0
+            for k1,v in v_k.items():
+                prob_next[i][k][k1] = len(v)/count
+                total += prob_next[i][k][k1]
+            print('total',total)
+    return prob,prob_next
+
+def get_slope_inter(prob,x_by_i,y_by_i):
+    nx = len(prob)
+
+    i = np.random.choice(np.arange(nx), p=list(prob.values()))
+    alpha_idx,l_idx = list(prob.keys())[i]
+
+    # try:
+    #     print('alpha_idx',alpha_idx,'x_by_i',x_by_i.keys())
+    # except:
+    #     print(x_by_i)
+
+    x_to_select = x_by_i[alpha_idx]
+    y_to_select = y_by_i[l_idx]
+
+    x_idx = np.random.randint(0,len(x_to_select))
+    y_idx = np.random.randint(0,len(y_to_select))
+    x = x_to_select[x_idx]
+    y = y_to_select[y_idx]
+    return x,y
+
+def generate_comb_artificial_data(X,Y,prob,prob_next,intervalsx,intervalsy,n,samples):
+    alpha_by_i = [get_values_in_X_by_intervals(X[:,i],intervalsx) for i in range(n)]
+    l_by_i = [get_values_in_X_by_intervals(Y[:,i],intervalsy) for i in range(n)]
+
+    all_alphas = []
+    all_ls = []
+    for _ in range(samples):
+        alphas = []
+        ls = []
+        for i in range(n):
+            if i == 0:
+                alpha,l = get_slope_inter(prob[i],alpha_by_i[i],l_by_i[i])
+            else:
+                alpha_idx = get_i([alpha],intervalsx)[0]
+                l_idx = get_i([l],intervalsy)[0]
+                #print(alpha_idx,l_idx,prob_next[i-1])
+                p = prob_next[i-1][(alpha_idx,l_idx)]
+                alpha,l = get_slope_inter(p,alpha_by_i[i],l_by_i[i])
+            alphas.append(alpha)
+            ls.append(l)
+        all_alphas.append(alphas)
+        all_ls.append(ls)
+    return all_alphas,all_ls
+
 def generate_artificial_data(Ns,intervalsx,intervalsy,maxx,folder):
 
     for n in Ns:
         slopes,intervals = select_original_breakpoints(n)
         samples = len(slopes)
+
+        prob,prob_next = comb_prob(slopes,intervals,intervalsx,intervalsy)
+        X,Y = generate_comb_artificial_data(slopes,intervals,prob,prob_next,intervalsx,intervalsy,n,samples)
+        save(X,Y,'data/'+folder+'/plos_one_2019_artificial_comb_'+str(n)+'test.txt')
+        continue
+
+        # SEM MEMÓRIA
+        X = artificial_series_no_memory(intervals,intervalsy,n,samples)
+        Y = artificial_series_no_memory(slopes,intervalsx,n,samples)
+        save(Y,X,'data/'+folder+'/plos_one_2019_artificial_no_memory_'+str(n)+'test.txt')
 
         # INTERVALO SEGUINDO PROB COND/ANGULO MEDIO DE CADA INTERVALO
         mean_slopes = np.mean(slopes,axis=0)

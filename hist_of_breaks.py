@@ -6,33 +6,7 @@ from collections import defaultdict
 
 from read_file import load_data
 
-data = load_data('data/plos_one_2019_breakpoints_k4_original1_data_filtered.txt')
 
-incr = []
-decr = []
-for sample in data:
-    slopes = sample[1]
-    breakpoints = sample[2]
-    n = len(breakpoints)
-    delta_time = sample[3][-1] - sample[3][0]
-    begin = sample[3][0]
-    for i in range(n):
-        moment = begin + delta_time*breakpoints[i]
-        if slopes[i+1] > slopes[i]:
-            incr.append(moment)
-        else:
-            decr.append(moment)
-
-incr = np.asarray(incr)
-decr = np.asarray(decr)
-
-#-----------------------------------------------------------------------------
-
-bins = 100
-
-range0 = (min(min(incr),min(decr))-0.1,max(max(incr),max(decr)))
-hist0,bins_edges0 = np.histogram(incr,bins=bins,range=range0)
-hist1,bins_edges1 = np.histogram(decr,bins=bins,range=range0)
 
 
 '''
@@ -107,31 +81,65 @@ def plt_conv_gauss(hist0,bins_edges0,label):
 
     return np.asarray(X),np.asarray(Y)
 
+def get_incr_decr(data):
+    
+    incr = []
+    decr = []
+    for sample in data:
+        slopes = sample[1]
+        breakpoints = sample[2]
+        n = len(breakpoints)
+        delta_time = sample[3][-1] - sample[3][0]
+        begin = sample[3][0]
+        for i in range(n):
+            moment = begin + delta_time*breakpoints[i]
+            if slopes[i+1] > slopes[i]:
+                incr.append(moment)
+            else:
+                decr.append(moment)
 
-plt.figure(figsize=(12,3))
-X0,Y0 = plt_conv_gauss(hist0,bins_edges0,'incr')
-X1,Y1 = plt_conv_gauss(hist1,bins_edges1,'decr')
+    incr = np.asarray(incr)
+    decr = np.asarray(decr)
 
-plt.bar(X0-0.05,Y0,label='incr',width=0.05)
-plt.bar(X1,Y1,label='decr',width=0.05)
-plt.legend()
-plt.tight_layout()
-plt.savefig('my_convolve_gaussian_a_0_0.2.png')
+    return incr,decr
+
+if __name__ == '__main__':
+
+    data = load_data('r_code/segmented_curves_filtered.txt')
+    incr,decr = get_incr_decr(data)
+    #-----------------------------------------------------------------------------
+
+    bins = 100
+
+    range0 = (min(min(incr),min(decr))-0.1,max(max(incr),max(decr)))
+    hist0,bins_edges0 = np.histogram(incr,bins=bins,range=range0)
+    hist1,bins_edges1 = np.histogram(decr,bins=bins,range=range0)
 
 
-# plt.hist(decr,bins=bins,range=range0,color='red')
+    plt.figure(figsize=(12,3))
+    X0,Y0 = plt_conv_gauss(hist0,bins_edges0,'incr')
+    X1,Y1 = plt_conv_gauss(hist1,bins_edges1,'decr')
+
+    plt.bar(X0-0.05,Y0,label='incr',width=0.05)
+    plt.bar(X1,Y1,label='decr',width=0.05)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig('my_convolve_gaussian_a_0_0.2.png')
 
 
-plt.figure(figsize=(12,3))
-x_gaussian = np.arange(-10,10,0.2)
-gauss = gaussian(x_gaussian,1,0,0.2)
-y0 = np.convolve(hist0,gauss,mode='same')
-y1 = np.convolve(hist1,gauss,mode='same')
-x = np.arange(bins_edges0[0],bins_edges1[-1],(bins_edges1[-1]-bins_edges1[0])/len(y0))
-plt.bar(x-0.05,y0,width=0.05,label='incr')
-plt.bar(x,y1,width=0.05,label='decr')
-plt.legend()
+    # plt.hist(decr,bins=bins,range=range0,color='red')
 
-plt.tight_layout()
-plt.savefig('convolve_gaussian_1_0_1to12.png')
+
+    plt.figure(figsize=(12,3))
+    x_gaussian = np.arange(-10,10,0.2)
+    gauss = gaussian(x_gaussian,1,0,0.2)
+    y0 = np.convolve(hist0,gauss,mode='same')
+    y1 = np.convolve(hist1,gauss,mode='same')
+    x = np.arange(bins_edges0[0],bins_edges1[-1],(bins_edges1[-1]-bins_edges1[0])/len(y0))
+    plt.bar(x-0.05,y0,width=0.05,label='incr')
+    plt.bar(x,y1,width=0.05,label='decr')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.savefig('convolve_gaussian_1_0_1to12.png')
 

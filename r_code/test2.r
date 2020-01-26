@@ -37,38 +37,33 @@ normalize <- function(x) {
 	return (temp)
 }
 
-get_segmented <- function(dati,doi,filename_curves,filename_mse,itmax,k,stopiferror,nboot,yy,i,xx) {
+get_segmented <- function(dati,doi,itmax,k,stopiferror,nboot,yy,i,xx) {
 	result <- tryCatch({
 
 	    out.lm<-lm(y~x,data=dati)
 	    o<-segmented(out.lm, seg.Z=~x, psi=NA, control=seg.control(it.max=itmax, display=FALSE,K=k, stop.if.error=stopiferror, n.boot=nboot))
-		y.mse <- mse(yy,broken.line(o,link=FALSE)$fit)
-		write(y.mse,file = filename_mse, append=TRUE)
+		pred.seg <- broken.line(o,link=FALSE)$fit
+	    	y.mse <- mse(yy,pred.seg)
+		
 		
 		if (y.mse >= 0.0001) {
-			global_invalid_curves <<- global_invalid_curves + 1
-		# y.mape <- mape(yy,broken.line(o,link=FALSE)$fit)
-		# if (y.mape >= 0.02) {
-		# 	# jpeg(paste('ge/',i))
-		# 	# plot(o)
-			
-		# 	# lines(xx,yy,col='green')
-		# 	# dev.off()
-		# 	print('if')
-		 } else {
-			# print(global_valid_curves)
-			
-			global_valid_curves <<- global_valid_curves + 1
-
-			slopes<-slope(o)$x[,1]
-
+			print('deu ruim')
+		 	print(doi)
+		 	print(pred.seg)
+			print(yy)
+			print(xx)
 			breakpoints<-o$psi[,2]
-			pred<-predict(o)
-			write(doi, file = filename_curves, append = TRUE)
-			write.table(t(slopes), file = filename_curves, append = TRUE, col.names=FALSE, row.names=FALSE)
-			write.table(t(breakpoints), file = filename_curves, append = TRUE, col.names=FALSE, row.names=FALSE)
-			write.table(t(pred), file = filename_curves, append = TRUE, col.names=FALSE, row.names=FALSE)
-			
+			print(breakpoints)
+			plot(xx,yy,main=doi)
+		 } else {
+			# print('deu bom')
+		 # 	print(doi)
+		 # 	print(pred.seg)
+			# print(yy)
+			# print(xx)
+			# breakpoints<-o$psi[,2]
+			# print(breakpoints)
+			# plot(xx,yy,main=doi)
 		}
 
 		return (o)
@@ -88,13 +83,6 @@ get_segmented <- function(dati,doi,filename_curves,filename_mse,itmax,k,stopifer
 }
 
 tests <- function(itmax,k,stopiferror) {
-	# filename <- paste("../data/plos_one_2019_breakpoints_k4_original1_data.txt",sep="")
-	filename <- "segmented_curves.txt"
-	filename_mse <- "mse_curves.txt"
-	conn <- file(filename,open="w")
-	close(conn)
-	conn2 <- file(filename_mse,open="w")
-	close(conn2)
   
 	nboot <- 0
 	if (stopiferror) {
@@ -102,12 +90,8 @@ tests <- function(itmax,k,stopiferror) {
 	}
 	vector.mse <- c()
 	vector.p.value <- c()
-	#for (i in seq(1,length(linn)/3)){
-	for (i in seq(1,length(linn)/3)) {
-		if (i%%1000==0){
-		  print(i)
-		}
-        
+	for (i in seq(200)) {
+	
 		xx<-data[[i]]$months[2:length(data[[i]]$months)]
 		yy<-data[[i]]$views[2:length(data[[i]]$views)]
 
@@ -116,7 +100,7 @@ tests <- function(itmax,k,stopiferror) {
 		
 		dati<-data.frame(x=xx,y=yy) 
 
-		y<-get_segmented(dati,doi=data[[i]]$doi,filename,filename_mse,itmax,k,stopiferror,nboot,yy,i,xx)
+		y<-get_segmented(dati,doi=data[[i]]$doi,itmax,k,stopiferror,nboot,yy,i,xx)
     }
 }
 

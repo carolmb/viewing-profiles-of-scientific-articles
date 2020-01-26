@@ -106,7 +106,8 @@ def preprocess_original_breakpoints(filename,n):
 
     return idxs,slopes,intervals
 
-def load_data(filename='data/plos_one_2019_breakpoints_k4_original1_data_filtered.txt'):
+def load_data(filename='r_code/segmented_curves_filtered.txt'):
+# def load_data(filename='data/plos_one_2019_breakpoints_k4_original1_data_filtered.txt'):
     # dois,xs,ys = read_file_original(filename='data/plos_one_2019.txt')
     data_filename = 'data/papers_plos_data_time_series2_filtered.json'
     data = open(data_filename,'r').read()

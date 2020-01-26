@@ -32,12 +32,14 @@ if __name__ == "__main__":
     # xs = np.asarray([norm(x) for x in xs])
     # ys = np.asarray([norm(y) for y in ys])
 
-    filename = 'data/plos_one_2019_breakpoints_k4_original1_data_filtered.txt'
-    
+    # filename = 'data/plos_one_2019_breakpoints_k4_original1_data_filtered.txt'
+    filename = 'r_code/segmented_curves_filtered.txt'
+
     for n in [2,3,4,5]:
-        slopes,intervals = select_original_breakpoints(n)
-        generate_freq_plots(slopes,intervals,n,'imgs/original1/scatter_')
-        generate_hist_plots(slopes,intervals,n,'imgs/original1/',args)
+        pass
+        #slopes,intervals = select_original_breakpoints(n)
+        #generate_freq_plots(slopes,intervals,n,'teste/density_')
+        # generate_hist_plots(slopes,intervals,n,'imgs/original1/',args)
 
     Ns = [2,3,4,5]
-    generate_artificial_data(Ns,intervalsx,intervalsy,maxx,'original1')
+    generate_artificial_data(Ns,intervalsx,intervalsy,maxx,'original1_segmented_curves')
