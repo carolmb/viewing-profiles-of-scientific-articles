@@ -2,11 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
-def plot_hist_int(X,Y,filename,xlabel):
-    plt.bar(X, height=Y, color='#028090',width=0.5)
+def plot_hist_int(X,Y,filename,xlabel,ylabel):
+    plt.bar(X, height=Y, color='tab:blue',width=0.5)
     plt.locator_params(axis='x',integer=MaxNLocator(integer=True))
     plt.xlabel(xlabel,fontsize=14)
-    plt.ylabel('occurrences',fontsize=14)
+    plt.ylabel(ylabel,fontsize=14)
     plt.savefig(filename+'.pdf')
     plt.clf()
 
@@ -25,7 +25,7 @@ def get_no_of_intervals(data):
 	return intervals
 
 def plot_hist_real(X,bins,filename,xlabel,ylabel):
-	plt.hist(X,bins=bins,color='#028090')
+	plt.hist(X,bins=bins,color='tab:blue')
 	plt.xlabel(xlabel,fontsize=14)
 	plt.ylabel(ylabel,fontsize=14)
 	plt.savefig(filename+'.pdf')
@@ -33,8 +33,8 @@ def plot_hist_real(X,bins,filename,xlabel,ylabel):
 
 def plot_life_time_hist(data,filename):
 	life_time = get_life_time(data)
-	xlabel = 'lifetime (years)'
-	ylabel = 'number of papers'
+	xlabel = 'lifetime'
+	ylabel = 'number of visualization profiles'
 	plot_hist_real(life_time,10,filename,xlabel,ylabel)
 
 def arg_remove_outliers(values):
@@ -55,10 +55,10 @@ def get_no_of_visual(data):
 
 def plot_no_of_visual(data,filename):
 	visual = get_no_of_visual(data)
-	args = arg_remove_outliers(visual)
-	visual = visual[args]
-	xlabel = 'number of visualizations'
-	ylabel = 'number of papers'
+	# args = arg_remove_outliers(visual)
+	# visual = visual[args]
+	xlabel = 'number of views'
+	ylabel = 'number of visualization profiles'
 	plot_hist_real(visual,10,filename,xlabel,ylabel)
 
 def filter_outliers(data):
@@ -77,7 +77,7 @@ def filter_outliers(data):
 def plot_no_of_intervals(data,filename):
     intervals = get_no_of_intervals(data)
     X,Y = np.unique(intervals,return_counts=True)
-    plot_hist_int(X,Y,filename,'number of intervals')
+    plot_hist_int(X,Y,filename,'number of segments','number of visualization profiles')
 
 def group_by_num_visual(data):
 	visual = get_no_of_visual(data)

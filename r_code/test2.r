@@ -5,7 +5,8 @@ traceback()
 # p-value for breakpoints
 # order by mse
 
-fileName <- "../data/plos_one_2019.txt"
+# fileName <- "../data/plos_one_2019.txt"
+fileName <- "syn_data.txt"
 conn <- file(fileName,open="r")
 linn <-readLines(conn)
 data<-vector("list",length(linn)/3)
@@ -54,16 +55,19 @@ get_segmented <- function(dati,doi,itmax,k,stopiferror,nboot,yy,i,xx) {
 			print(xx)
 			breakpoints<-o$psi[,2]
 			print(breakpoints)
-			plot(xx,yy,main=doi)
+			plot(o, conf.level=0.95, shade=TRUE)
+			points(xx,yy, link=TRUE, col=2)
 		 } else {
-			# print('deu bom')
-		 # 	print(doi)
-		 # 	print(pred.seg)
-			# print(yy)
-			# print(xx)
-			# breakpoints<-o$psi[,2]
-			# print(breakpoints)
-			# plot(xx,yy,main=doi)
+			print('deu bom')
+		 	print(doi)
+		 	print(pred.seg)
+			print(yy)
+			print(xx)
+			breakpoints<-o$psi[,2]
+			print(breakpoints)
+			plot(o, conf.level=0.95, shade=TRUE)
+			points(xx,yy, link=TRUE, col=2)
+			
 		}
 
 		return (o)
@@ -90,8 +94,10 @@ tests <- function(itmax,k,stopiferror) {
 	}
 	vector.mse <- c()
 	vector.p.value <- c()
-	for (i in seq(200)) {
-	
+
+	idxs <- c(16,78,127,144,169,174,183,188)
+	# for (i in idxs) {
+	for (i in seq(100)) {
 		xx<-data[[i]]$months[2:length(data[[i]]$months)]
 		yy<-data[[i]]$views[2:length(data[[i]]$views)]
 
@@ -99,7 +105,7 @@ tests <- function(itmax,k,stopiferror) {
 		yy<-normalize(yy)
 		
 		dati<-data.frame(x=xx,y=yy) 
-
+		# write.csv(dati,file=paste("data",i,'.csv'))
 		y<-get_segmented(dati,doi=data[[i]]$doi,itmax,k,stopiferror,nboot,yy,i,xx)
     }
 }

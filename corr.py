@@ -15,9 +15,10 @@ def plot_scatter_with_freq(X,Y,title,xlabel,ylabel,filename):
 
 	df = pd.DataFrame({'x':X,'y':Y})
 	ax = sns.jointplot(x="x", y="y", data=df, kind="kde")
-	ax.set_axis_labels(xlabel,ylabel)
+	ax.set_axis_labels(xlabel,ylabel,fontsize=18)
 	
-	plt.suptitle(title)
+	# plt.suptitle(title)
+	print(title)
 
 	plt.savefig(filename + '.pdf',bbox_inches='tight')
 	plt.clf()

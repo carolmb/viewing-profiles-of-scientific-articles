@@ -20,8 +20,9 @@ def plot_scatter(X,Y,title,xlabel,ylabel,filename):
     else: 
         df = pd.DataFrame({'x':X,'y':Y})
         ax1 = sns.jointplot(x="x", y="y", data=df, kind="kde")
-        ax1.set_axis_labels(xlabel,ylabel)
-        plt.suptitle(title)
+        ax1.set_axis_labels(xlabel,ylabel,fontsize=18)
+        #plt.suptitle(title)
+        print(title)
     # fig.tight_layout() #(pad=0.5, w_pad=0.5, h_pad=1.2)
     # fig.suptitle(name)
     plt.savefig(filename,format='pdf',bbox_inches='tight')

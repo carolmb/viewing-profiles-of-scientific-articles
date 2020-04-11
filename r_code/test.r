@@ -6,6 +6,7 @@ traceback()
 # order by mse
 
 fileName <- "../data/plos_one_2019.txt"
+# fileName <- "syn_data.txt"
 conn <- file(fileName,open="r")
 linn <-readLines(conn)
 data<-vector("list",length(linn)/3)
@@ -43,7 +44,7 @@ get_segmented <- function(dati,doi,filename_curves,filename_mse,itmax,k,stopifer
 	    out.lm<-lm(y~x,data=dati)
 	    o<-segmented(out.lm, seg.Z=~x, psi=NA, control=seg.control(it.max=itmax, display=FALSE,K=k, stop.if.error=stopiferror, n.boot=nboot))
 		y.mse <- mse(yy,broken.line(o,link=FALSE)$fit)
-		write(y.mse,file = filename_mse, append=TRUE)
+		#write(y.mse,file = filename_mse, append=TRUE)
 		
 		if (y.mse >= 0.0001) {
 			global_invalid_curves <<- global_invalid_curves + 1
@@ -64,6 +65,7 @@ get_segmented <- function(dati,doi,filename_curves,filename_mse,itmax,k,stopifer
 
 			breakpoints<-o$psi[,2]
 			pred<-predict(o)
+			write(y.mse,file=filename_mse,append=TRUE)
 			write(doi, file = filename_curves, append = TRUE)
 			write.table(t(slopes), file = filename_curves, append = TRUE, col.names=FALSE, row.names=FALSE)
 			write.table(t(breakpoints), file = filename_curves, append = TRUE, col.names=FALSE, row.names=FALSE)
@@ -89,8 +91,8 @@ get_segmented <- function(dati,doi,filename_curves,filename_mse,itmax,k,stopifer
 
 tests <- function(itmax,k,stopiferror) {
 	# filename <- paste("../data/plos_one_2019_breakpoints_k4_original1_data.txt",sep="")
-	filename <- "segmented_curves.txt"
-	filename_mse <- "mse_curves.txt"
+	filename <- "segmented_curves_5_7_years.txt"
+	filename_mse <- "mse_curves_error_5_7_years.txt"
 	conn <- file(filename,open="w")
 	close(conn)
 	conn2 <- file(filename_mse,open="w")
@@ -110,6 +112,8 @@ tests <- function(itmax,k,stopiferror) {
         
 		xx<-data[[i]]$months[2:length(data[[i]]$months)]
 		yy<-data[[i]]$views[2:length(data[[i]]$views)]
+		# if (max(xx)-min(xx) < 5 && max(xx)-min(xx) > 7)
+		# 	continue
 
 		xx<-normalize(xx)
 		yy<-normalize(yy)
@@ -120,63 +124,9 @@ tests <- function(itmax,k,stopiferror) {
     }
 }
 
-
-# tests(100,3,FALSE)
-# [1] 16
-# [1] 946
-# [1] 87
-# [1] 9913
-# [1] -0.02208008
-
-
-# tests(100,5,FALSE)
-# [1] 5
-# [1] 346
-# [1] 87
-# [1] 9913
-# [1] -0.01375302
-
-# tests(100,4,FALSE)
-# [1] 4
-# [1] 570
-# [1] 87
-# [1] 9913
-# [1] -0.004059659
-
-# tests(500,4,FALSE)
-# tests(300,4,FALSE)
-
 tests(100,4,FALSE)
 print(global_valid_curves)
 print(global_invalid_curves)
-# tests(500,4,TRUE)
-# tests(300,4,TRUE)
-
-# total 10000
-# [1] 87 <- casos em que supostamente não tem breakpoint
-# [1] 9913
-
-# data/breakpoints_k3it.max100stop.if.errorFALSE.txt
-# 0.000109 0.000196
-# data/breakpoints_k4it.max1000stop.if.errorFALSE.txt
-# 0.000144 0.000511
-# data/breakpoints_k4it.max100stop.if.errorFALSE.txt
-# 0.000092 0.000205
-# data/breakpoints_k4it.max100stop.if.errorTRUE.txt
-# 0.000054 0.000108
-# data/breakpoints_k4it.max300stop.if.errorFALSE.txt
-# 0.000110 0.000289
-# data/breakpoints_k4it.max300stop.if.errorTRUE.txt
-# 0.000052 0.000071
-# data/breakpoints_k4it.max500stop.if.errorFALSE.txt
-# 0.000110 0.000289
-# data/breakpoints_k4it.max500stop.if.errorTRUE.txt
-# 0.000053 0.000091
-# data/breakpoints_k5it.max100stop.if.errorFALSE.txt
-# 0.000075 0.000160
-# data/breakpoints_k6it.max100stop.if.errorFALSE.txt
-# 0.000076 0.000270
-
 
 
 # total 162534

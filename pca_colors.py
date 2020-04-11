@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 from collections import Counter
 from scipy.stats import pearsonr
+from stasts import filter_outliers
 from sklearn.decomposition import PCA
 from read_file import breakpoints2intervals,load_data
 
@@ -68,26 +69,6 @@ def plot_pca_colors(all_data,colors,filename):
     plt.title(filename)
     # plt.show()
     plt.savefig(filename+'_pca.png',bbox_inches='tight')
-
-def select_by_N(data,N):
-    dois = []
-    xs_diff = []
-    ys_last = []
-    slopes = []
-    intervals = []
-    
-    for i,ss,bs,xs,ys,_ in data:
-        if len(ss) == N:
-            dois.append(i)
-            xs_diff.append(xs[-1]-xs[0])
-            ys_last.append(ys[-1])
-            slopes.append(np.asarray([(np.arctan(s)*57.2958) for s in ss]))
-            intervals.append(np.asarray(breakpoints2intervals(bs)))
-
-    slopes = np.asarray(slopes)
-    intervals = np.asarray(intervals)
-    all_data = np.concatenate((slopes,intervals),axis=1)
-    return dois,xs_diff,ys_last,all_data
 
 def get_number_of_authors(dois,data):
     number = []
@@ -178,50 +159,26 @@ def plot_coutries(all_data,countries,filename):
     plt.clf()
     # plt.show()
 
-def filter(data):
-    q75 = np.quantile(data,0.75)
-    q25 = np.quantile(data,0.25)
-    iqr = q75 - q25
-    data = [min(q75+1.5*iqr,d) for d in data]
-    data = [max(q25-1.5*iqr,d) for d in data]
-    return data
-
 if __name__ == "__main__":
 
+    # data_filename = 'data/papers_plos_data_time_series2_filtered.json'
+    # data_json = json.loads(open(data_filename,'r').read())
+
     data = load_data()
+    data = filter_outliers(data)
 
-    data_filename = 'data/papers_plos_data_time_series2_filtered.json'
-    data_json = json.loads(open(data_filename,'r').read())
-
-    for n in [2,3,4,5]:
-        dois,xs_diff,ys_last,all_data = select_by_N(data,n)
-
-        # normaliza os dados
-        m = np.mean(all_data,axis=0)
-        std = np.std(all_data,axis=0)
-        all_data = (all_data - m)/std
-
-        # cor por número de visualização
-        xs_diff = filter(xs_diff)
-        ys_last = filter(ys_last)
-
+    for N in [2,3,4,5]:
         
-        # plot_pca_colors(all_data,ys_last,'imgs/colors_delta_visual_'+str(n))
-
-        # plot_pca_colors(all_data,xs_diff,'imgs/colors_delta_years_'+str(n))
-
-        #---------------------------------------------------------------------------------------
-
-        number_of_authors = get_number_of_authors(dois,data_json)
-        # plot_pca_colors(all_data,xs_diff,'imgs/colors_number_of_authors_'+str(n))
-
-        # plt.scatter(number_of_authors,ys_last,alpha=0.6)
-        # plt.xlabel('lifetime')
-        # plt.ylabel('views')
-        # plt.show()
-        # plt.clf()
-
-        #---------------------------------------------------------------------------------------
-
-        countries = get_colors_countries(dois,data_json)
-        plot_coutries(all_data,countries,'imgs/colors_countries_'+str(n))
+        slopes = []
+        intervals = []
+        lifetimes = []
+        for i,s,b,xs,ys,p in data:
+            if len(s) == N:
+                slopes.append(s)
+                intervals.append(np.asarray(breakpoints2intervals(b)))
+                lifetimes.append(xs[-1]-xs[0])
+        slopes = np.asarray(slopes)
+        intervals = np.asarray(intervals)
+        mtx = np.concatenate((slopes,intervals),axis=1)
+        print(mtx.shape)
+        plot_pca_colors(mtx,lifetimes,'pca_color_lifetime_'+str(N)+'.pdf')

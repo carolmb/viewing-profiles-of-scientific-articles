@@ -1,49 +1,99 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python
-# coding: utf-8
 
 import numpy as np
+import pandas as pd
+import seaborn as sns
 import matplotlib.cm as cm
-# import matplotlib 
-# matplotlib.use('agg') 
-from matplotlib.patches import Ellipse
+
 import matplotlib.pyplot as plt
 
 # from pyksc import ksc
-from sklearn.cluster import KMeans
 from collections import defaultdict
 from sklearn.decomposition import PCA
+from mpl_toolkits.mplot3d import Axes3D
+from read_file import select_original_breakpoints
 from sklearn.cluster import AgglomerativeClustering
 from scipy.cluster.hierarchy import dendrogram,linkage,cut_tree
 
-from read_file import select_original_breakpoints
+def multivariateGrid(col_x, col_y, col_k, df, xlabel,ylabel,k_is_color=False, scatter_alpha=.5):
+    def colored_scatter(x, y, c=None):
+        def scatter(*args, **kwargs):
+            args = (x, y)
+            if c is not None:
+                kwargs['c'] = c
+            kwargs['alpha'] = scatter_alpha
+            plt.scatter(*args, **kwargs)
 
-def plot_pca(data,X,labels,colors,filename):
+        return scatter
+
+    g = sns.JointGrid(
+        x=col_x,
+        y=col_y,
+        data=df
+    )
+
+    color = None
+    legends=[]
+    for name, df_group in df.groupby(col_k):
+        legends.append(name)
+        if k_is_color:
+            color=name
+        g.plot_joint(
+            colored_scatter(df_group[col_x],df_group[col_y],color),
+        )
+        ax1 = sns.distplot(
+            df_group[col_x].values,
+            ax=g.ax_marg_x,
+            hist=False,
+            color=color,
+            kde_kws={"shade":True}
+        )
+        ax2 = sns.distplot(
+            df_group[col_y].values,
+            ax=g.ax_marg_y,
+            hist=False,
+            color=color,
+            vertical=True,
+            kde_kws={"shade":True}
+        )
+
+    g.ax_joint.set_xlabel(xlabel,fontsize=18)
+    g.ax_joint.set_ylabel(ylabel,fontsize=18)
+    # Do also global Hist:
+    # sns.distplot(
+    #     df[col_x].values,
+    #     ax=g.ax_marg_x,
+    #     color='grey'
+    # )
+    # sns.distplot(
+    #     df[col_y].values.ravel(),
+    #     ax=g.ax_marg_y,
+    #     color='grey',
+    #     vertical=True
+    # )
+
+def plot_pca(X,labels,colors,filename):
+    pca = PCA(n_components=3)
+    pca.fit(X)
+    X1 = pca.transform(X)
+    x_exp, y_exp, z_exp = pca.explained_variance_ratio_[:3]*100
+    label_colors = [colors[l] for l in labels]
+    print(np.unique(label_colors,return_counts=True))
+    fig = plt.figure(figsize=(8,8))
+    df = pd.DataFrame({'x':X1[:,0],'y':X1[:,2],'type':label_colors})
+    multivariateGrid('x','y','type',df,'PCA1 (%.2f%%)' % x_exp, 'PCA3 (%.2f%%)' % z_exp, k_is_color=True,scatter_alpha=0.5)
+    plt.savefig(filename+"_pca1_pca2.png")
+    plt.clf()
+
     pca = PCA(n_components=2)
     pca.fit(X)
     X1 = pca.transform(X)
-    label_colors = [colors[l] for l in labels]
-    print(np.unique(label_colors,return_counts=True))
-    plt.figure(figsize=(10,10))
-    plt.scatter(X1[:,0],X1[:,1],color=label_colors,alpha=0.4)
-
-    # average = average_curve(data,labels)
-    # for x0,y0,s0,k in average:
-    #     cov = np.cov(x0,y0, rowvar=False)
-    #     vals, vecs = eigsorted(cov)
-    #     theta = np.degrees(np.arctan2(*vecs[:,0][::-1]))
-
-        # ellipse = Ellipse((np.mean(x0),np.mean(y0)),
-        #     width=np.std(x0)*2,
-        #     height=np.std(y0)*2,angle=theta,fill=False,linewidth=2.0)
-        
-        # ellipse.set_alpha(0.4)
-        # ellipse.set_edgecolor(colors[k])
-        # ellipse.set_facecolor(None)
-        # ax = plt.gca()
-        # ax.add_artist(ellipse)
-
-    plt.savefig(filename)
-    plt.clf()
+    x_exp, y_exp = pca.explained_variance_ratio_[:2]*100
+    fig = plt.figure(figsize=(10,10))
+    df = pd.DataFrame({'x':X1[:,0],'y':X1[:,1],'type':label_colors})
+    multivariateGrid('x','y', 'type', df, 'PCA1 (%.2f%%)' % x_exp, 'PCA2 (%.2f%%)' % y_exp, k_is_color=True, scatter_alpha=.5)
+    plt.savefig(filename+'_2.png')
 
 def norm(data):
     m = np.mean(data,axis=0)
@@ -104,59 +154,103 @@ def eigsorted(cov):
     order = vals.argsort()[::-1]
     return vals[order], vecs[:,order]
 
-def plot_clusters(data,labels,colors,filename):
-    average = average_curve(data,labels)
+def average_curve_point(data,labels):
 
-    legend = ['1','2','3','4','all']
-    plt.figure(figsize=(3,3))
+    n = data.shape[1]//2
+
+    print(n,data.shape)
+
+    group_by = defaultdict(lambda:[])
+    for sample,label in zip(data,labels):
+        group_by[label].append(sample)
+
+    average = []
+    
+    for k,values in group_by.items():
+        values = np.asarray(values)
+        
+        mtx_inter = np.zeros((len(values),100),dtype=np.float)
+        for idx_j,sample in enumerate(values):
+            degrees = sample[:n]
+            intervals = sample[n:]
+            cumsum = np.cumsum(intervals)
+            for idx_i,i in enumerate(np.linspace(0,1,100)):
+                y = 0
+                last_delta_x = cumsum[0]
+                for degree,cum_x,delta_x in zip(degrees,cumsum,intervals):
+                    tan_x = np.tan(degree*np.pi/180)
+                    if i < cum_x:
+                        x = i - last_delta_x
+                        y += x*tan_x
+                        break
+                    y += delta_x*tan_x
+                    last_delta_x = cum_x
+                mtx_inter[idx_j][idx_i] = y
+
+        mean = np.mean(mtx_inter,axis=0)
+        std = np.std(mtx_inter,axis=0)
+
+        print(mean.shape,std.shape)
+        average.append((np.linspace(0,1,100),mean,np.zeros(100),std,k))
+
+    return average
+
+def plot_clusters(data,labels,colors,filename):
+    average = average_curve_point(data,labels) # ao invés de average_curve(data,labels)
+
+    plt.figure(figsize=(6,3))
     for x0,y0,s0,s1,k in average:
         print(k,colors[k])
-        plt.errorbar(x0,y0,xerr=s0,yerr=s1,marker='o',color=colors[k],linestyle='-',alpha=0.9,label=legend[k])
-
-    plt.legend()
-
+        print(x0.shape,y0.shape,s0.shape,s1.shape)
+        plt.errorbar(x0,y0,xerr=s0,yerr=s1,marker='o',markersize=0.7,color=colors[k],linestyle='-',alpha=0.7)
+    
+    plt.xlabel('time',fontsize=16)
+    plt.ylabel('views',fontsize=16)
+    plt.tight_layout()
+    print(filename)
     plt.savefig(filename)
     plt.clf()
 
-def get_labels_kmeans(X):
-    kmeans = KMeans(n_clusters=3)
-    kmeans.fit(X)
-    labels = kmeans.predict(X)
-    return labels
+def get_labels_clustering_hier(X,kclusters,ktotal):
 
-def get_labels_clustering_hier(X,ktotal):
-    # alg = AgglomerativeClustering(n_clusters=3,linkage='single')
-    # alg = alg.fit(X)
-    # plot_dendrogram(alg, truncate_mode='level', p=3)
-    
-    plt.figure(figsize=(30,20))
     Z = linkage(X, 'ward')
     dn = dendrogram(Z,leaf_rotation=90.,leaf_font_size=8.,truncate_mode='lastp',p=20,show_contracted=True)
+    
+    plt.figure(figsize=(25,15))
     plt.ylabel('distance',fontsize=18)
     plt.xticks(fontsize=16)
     plt.yticks(fontsize=16)
-    plt.savefig('clustering_ward_p20.pdf')
+    plt.savefig('clustering_ward_p20_k%d.pdf'%ktotal)
     plt.clf()
-    labels = cut_tree(Z,n_clusters=ktotal)
+    
+    labels = cut_tree(Z,n_clusters=kclusters)
+    
     return [l[0] for l in labels]
 
-def get_labels_ksc(X):
-    cents, labels, shift, distc = ksc.ksc(X, 3)
-    return labels
+def save_groups(labels,data,output):
+    labels = np.asarray(labels).reshape(-1,1)
+    data = np.concatenate((data,labels),axis=1)
+    
+    np.savetxt(output+'curves_label.txt',data,delimiter=' ',fmt='%.18e')
 
-def plot_groups(get_labels,alg_name):
-    for ktotal in [5]:
-        slopes,intervals = select_original_breakpoints(ktotal)
+def plot_groups(get_labels,alg_name,output):
+    for ktotal in [2,3,4,5]:
+        slopes,intervals = select_original_breakpoints(ktotal,'r_code/segmented_curves_filtered.txt')
         data = np.concatenate((slopes,intervals),axis=1)
         X = norm(data)
-        labels = get_labels(data,ktotal)
-        plot_pca(data,norm(data),labels,colors,'imgs/pca_%s_%d.pdf'%(alg_name,ktotal))
-        plot_clusters(data,labels,colors,'imgs/average_curve_%s_%d.pdf'%(alg_name,ktotal))
+        print(ktotal,len(X))
+        
+        labels = get_labels(data,3,ktotal)
+        save_groups(labels,data,'k'+str(ktotal)+'_')
+        
+        #plot_pca(X,labels,colors,'imgs/pca_%s_%d'%(alg_name,ktotal))
+        #plot_clusters(data,labels,colors,output+str(ktotal)+'.pdf')
 
-colors = ['#307438','#b50912','#028090','magenta','orange']
+colors = ['tab:red','tab:blue','tab:orange','tab:green','tab:grey']
 
 if __name__ =='__main__': 
-    plot_groups(get_labels_clustering_hier,'hierar')
+    output = ''
+    plot_groups(get_labels_clustering_hier,'hierar',output)
 
 # plot_groups(get_labels_ksc,'ksc')
 

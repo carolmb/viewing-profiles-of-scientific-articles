@@ -16,8 +16,8 @@ data = filter_outliers(data)
 
 
 stasts.plot_life_time_hist(data,'lifetime')
-stasts.plot_no_of_visual(data,'visual')
-stasts.plot_no_of_intervals(data,'intervals')
+stasts.plot_no_of_visual(data,'views')
+stasts.plot_no_of_intervals(data,'segments')
 
 '''
 data_lQ2,data_geQ2 = group_by_num_visual(data)

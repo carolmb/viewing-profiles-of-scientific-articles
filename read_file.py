@@ -128,8 +128,8 @@ def load_data(filename='r_code/segmented_curves_filtered.txt'):
     
     return data
 
-def select_original_breakpoints(N):
-    data = load_data()
+def select_original_breakpoints(N,filename):
+    data = load_data(filename)
     data = filter_outliers(data)
 
     slopes = []

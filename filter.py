@@ -1,7 +1,8 @@
 
 # f_input = 'data/plos_one_2019_breakpoints_k4_original1_data.txt'
 # f_input = 'data/plos_one_2019_menor.txt'
-f_input = 'r_code/segmented_curves.txt'
+# f_input = 'r_code/segmented_curves.txt'
+f_input = 'r_code/segmented_curves_syn_data.txt'
 
 inp = open(f_input,'r').read().split('\n')
 
