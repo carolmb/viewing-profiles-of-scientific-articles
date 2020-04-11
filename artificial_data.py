@@ -1,9 +1,8 @@
 import numpy as np
-from collections import defaultdict
-from scipy import stats
-from read_file import save,select_original_breakpoints
-
 import matplotlib.pyplot as plt
+
+from scipy import stats
+from collections import defaultdict
 from mpl_toolkits.mplot3d import Axes3D
 
 random_state = np.random.RandomState(9)
@@ -174,61 +173,6 @@ def comb_prob(slopes,intervals,intervalsx,intervalsy):
                 w = l_comb_next[i][k][0]
                 alpha_prob_next[i][k] = lambda x,y: [[z]]
                 l_prob_next[i][k] = lambda x,y: [[w]]
-    # comb = defaultdict(lambda:defaultdict(lambda:[]))
-    # alpha_comb_next = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:[])))
-    # l_comb_next = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:[])))
-    # prob = defaultdict(lambda:defaultdict(lambda:0))
-    # alpha_prob_next = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
-    # l_prob_next = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
-    # for xs,ys in zip(slopes,intervals):
-    #     for i,(x,y) in enumerate(zip(xs,ys)):
-    #         x_idx = get_i([x],intervalsx)[0]
-    #         y_idx = get_i([y],intervalsy)[0]
-    #         comb[i][(x_idx,y_idx)].append((x,y))
-    #         if i < len(xs)-1:
-    #             x1_idx = get_i([xs[i+1]],intervalsx)[0]
-    #             y1_idx = get_i([ys[i+1]],intervalsy)[0]
-    #             alpha_comb_next[i][(x_idx,y_idx)][x1_idx].append(xs[i+1])
-    #             l_comb_next[i][(x_idx,y_idx)][y1_idx].append(ys[i+1])
-
-    # for i,comb_i in comb.items():
-    #     count = 0
-    #     for k,v in comb_i.items():
-    #        comb[i][k] = np.asarray(v)
-    #        count += len(v)
-    #     total = 0.0
-    #     print('i',i)
-    #     for k,v in comb_i.items():
-    #        prob[i][k] = len(v)/count
-    #        print(k,prob[i][k])
-    #        total += prob[i][k]
-    #     print('total',total)
-
-    #     for k,v_k in alpha_comb_next[i].items():
-    #         count = 0
-    #         for k1,v in v_k.items():
-    #             alpha_comb_next[i][k][k1] = np.asarray(v)
-    #             count += len(v)
-    #         total = 0.0
-    #         # print('alpha',i)
-    #         for k1,v in v_k.items():
-    #             alpha_prob_next[i][k][k1] = len(v)/count
-    #             # print(k,k1,alpha_prob_next[i][k][k1])
-    #             total += alpha_prob_next[i][k][k1]
-    #         # print('total',total)
-
-    #     for k,v_k in l_comb_next[i].items():
-    #         count = 0
-    #         for k1,v in v_k.items():
-    #             l_comb_next[i][k][k1] = np.asarray(v)
-    #             count += len(v)
-    #         total = 0.0
-    #         # print('l',i)
-    #         for k1,v in v_k.items():
-    #             l_prob_next[i][k][k1] = len(v)/count
-    #             # print(k,k1,l_prob_next[i][k][k1])
-    #             total += l_prob_next[i][k][k1]
-    #         # print('total',total)
     return prob,alpha_prob_next,l_prob_next
 
 def get_slope_inter(prob,x_by_i):
@@ -335,53 +279,39 @@ def generate_comb_artificial_data(X,Y,prob,alpha_prob_next,l_prob_next,intervals
         all_ls.append(ls)
     return all_alphas,all_ls
 
-def generate_artificial_data(slopes,intervals,n,intervalsx,intervalsy,maxx,source,folder):
+def generate_artificial_data(all_slopes,all_intervals,n,intervalsx,intervalsy,maxx,):
 
-    samples = len(slopes)
+    models = defaultdict(lambda:[])
 
+    
+    for slopes,intervals in zip(all_slopes,all_intervals):
+        samples = len(slopes)
 
-    print("Markov-1 multivaribles model")
-    prob,alpha_prob_next,l_prob_next = comb_prob(slopes,intervals,intervalsx,intervalsy)
-    X,Y = generate_comb_artificial_data(slopes,intervals,prob,alpha_prob_next,l_prob_next,intervalsx,intervalsy,n,samples)
-    save(X,Y,folder+'markov1_multi_'+str(n)+'_gaussian_test.txt')    
+        print("Markov-1 multivaribles model")
+        prob,alpha_prob_next,l_prob_next = comb_prob(slopes,intervals,intervalsx,intervalsy)
+        X,Y = generate_comb_artificial_data(slopes,intervals,prob,alpha_prob_next,l_prob_next,intervalsx,intervalsy,n,samples)
+        models['markov1_multi'].append((X,Y))
+        # save(X,Y,folder+'markov1_multi_'+str(n)+'_gaussian_test.txt')    
 
-    print("No memory model")
-    # SEM MEMÓRIA
-    X = artificial_series_no_memory(intervals,intervalsy,n,samples)
-    Y = artificial_series_no_memory(slopes,intervalsx,n,samples)
-    save(Y,X,folder+'no_memory_'+str(n)+'_gaussian_test.txt')
+        print("No memory model")
+        # SEM MEMÓRIA
+        X = artificial_series_no_memory(slopes,intervalsx,n,samples)
+        Y = artificial_series_no_memory(intervals,intervalsy,n,samples)
+        models['no_memory'].append((X,Y))
+        # save(X,Y,folder+'no_memory_'+str(n)+'_gaussian_test.txt')
 
-    # INTERVALO SEGUINDO PROB COND/ANGULO MEDIO DE CADA INTERVALO
-    # mean_slopes = np.mean(slopes,axis=0)
-    # articifial_xs = artificial_series(intervals,intervalsy,n,samples)
-    # mean_slopes = [mean_slopes.tolist()]*samples
-    # articifial_xs = np.asarray(articifial_xs)
-    # save(mean_slopes,articifial_xs,'data/'+folder+'/plos_one_2019_artificial_intervals_slope_axis0_'+str(n)+'_test.txt')
+        print("Null model")
+        # TUDO ALEATORIO (qualquer eixo)
+        X = (random_state.rand(samples,n)*maxx)
+        Y = random_state.rand(samples,n)
+        models['null_model'].append((X,Y))
+        # save(X,Y,folder+'artificial_all_random_'+str(n)+'_test.txt')
 
-    # INTERVALO SEGUINDO PROB COND/ANGULO ALEATÓRIO DE CADA INTERVALO
-    # artificial_slopes = random_state.choice(slopes.flatten(),size=samples*n).reshape(samples,n)
-    # save(artificial_slopes,articifial_xs,'data/'+folder+'/plos_one_2019_artificial_intervals_slope_random_'+str(n)+'_test.txt')
+        print("Markov-1 univariavel model")
+        # INTERVALOS E SLOPES SEGUINDO O MODELO
+        X = artificial_series(slopes,intervalsx,n,samples)
+        Y = artificial_series(intervals,intervalsy,n,samples)        
+        models['markov1_uni'].append((X,Y))
+        # save(X,Y,folder+'markov1_uni_'+str(n)+'_gaussian_test.txt')
 
-    print("Null model")
-    # TUDO ALEATORIO (qualquer eixo)
-    artificial_slopes = (random_state.rand(samples,n)*maxx)
-    artificial_intervals = random_state.rand(samples,n)
-    save(artificial_slopes,artificial_intervals,folder+'artificial_all_random_'+str(n)+'_test.txt')
-
-
-    # SLOPES SEGUINDO PROB COND/ANGULO MEDIO DE CADA INTERVALO
-    # mean_intervals = np.mean(intervals,axis=0)
-    # articifial_slopes = artificial_series(slopes,intervalsx,n,samples)
-    # mean_intervals = [mean_intervals.tolist()]*samples
-    # mean_intervals = np.asarray(mean_intervals)
-    # save(articifial_slopes,mean_intervals,'data/'+folder+'/plos_one_2019_artificial_slopes_interval_axis0_'+str(n)+'_test.txt')
-
-    # # INTERVALO SEGUINDO PROB COND/ANGULO ALEATÓRIO DE CADA INTERVALO
-    # artificial_intervals = np.random.choice(intervals.flatten(),size=samples*n).reshape(samples,n)
-    # save(articifial_slopes,artificial_intervals,'data/'+folder+'/plos_one_2019_artificial_slopes_interval_random_'+str(n)+'_test.txt')
-
-    print("Markov-1 univariavel model")
-    # INTERVALOS E SLOPES SEGUINDO O MODELO
-    artificial_intervals = artificial_series(intervals,intervalsy,n,samples)        
-    artificial_slopes = artificial_series(slopes,intervalsx,n,samples)
-    save(artificial_slopes,artificial_intervals,folder+'markov1_uni_'+str(n)+'_gaussian_test.txt')
+    return models

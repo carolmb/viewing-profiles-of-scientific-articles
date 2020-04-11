@@ -19,7 +19,7 @@ def get_data(source1,source2,n,preprocessed):
 	if preprocessed:
 		slopes_original,intervals_original = util.read_preprocessed_file(n,source1)
 	else:
-		slopes_original,intervals_original = select_original_breakpoints(n)
+		slopes_original,intervals_original = select_original_breakpoints(n,source1)
 	
 	_,slopes_artificial,intervals_artificial = read_artificial_breakpoints(source2)
 	
@@ -202,7 +202,7 @@ def get_pca_infos(all_data_norm,artificial_norm,original_norm):
 def get_args_terminal():
     argv = sys.argv[1:]
     
-    source1,source2 = None,None
+    source1,source2 = 'segm/segmented_curves_filtered.txt',None
     output = None
     N = 5
     preprocessed = False
@@ -241,12 +241,7 @@ if __name__ == "__main__":
 	plot_pca(y1,y2,y1_label,y2_label,output)
 
 '''
-# para todas as curvas: 
-python pca_artificial.py -s data_k3/markov1_multi_3_gaussian_test.txt -N 3 -o data data_k3/
-
-# para os labels diferentes:
-pca_artificial.py --s1 data_by_label_k3/curves_label_0.txt 
-	--s2 data_by_label_k3/label_0_markov1_uni_3_gaussian_test.txt -N 3 -o data_by_label_k3/label_0_markov1_uni_ -p
-
+# para todas as curvas com label: 
+python pca_artificial.py --s2 k3/markov1_uni_k3_label.txt -N 3 -o k3/
 
 '''
