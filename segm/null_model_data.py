@@ -16,6 +16,25 @@ def get_slope(f_input,n_input):
 		all_slopes += slopes
 	return all_slopes
 
+def breakpoints2intervals(x):
+    intervals = [x[0]]
+    for i in range(len(x)-1):
+        intervals.append(x[i+1]-x[i])
+    intervals.append(1-x[-1])
+    return intervals
+
+def get_intervals(f_input,n_input):
+	print(f_input)
+	all_intervals = []
+	content = open(f_input,'r').read().split('\n')[:-1]
+	
+	N = len(content)
+	for i in range(0,N,n_input):
+		intervals = content[i+2].split(' ')
+		intervals = breakpoints2intervals([float(m) for m in intervals])
+		all_intervals += intervals
+	return all_intervals
+
 def syn_data():
 	f_input = "../data/plos_one_2019.txt"
 	f_output = 'syn_data.txt'
@@ -46,7 +65,7 @@ def syn_data():
 
 	out.close()
 
-def dist(original,synthetic):
+def dist(original,synthetic,x_label,f_output):
 	x = np.linspace(0,90,300)
 	y = gaussian(300,1)
 	print()
@@ -58,14 +77,19 @@ def dist(original,synthetic):
 	# plt.plot(x,ori_gaussian.pdf(x), color='tab:green', label='original')
 	# plt.plot(x,syn_gaussian.pdf(x), color='tab:red', label='synthetic')
 	plt.legend()
-	plt.xlabel('angle',fontsize=14)
+	plt.xlabel(x_label,fontsize=14)
 	# plt.ylabel('')
-	plt.savefig('dist_angle.pdf')
+	plt.savefig(f_output)
+	plt.clf()
 
 f_ori = 'segmented_curves_filtered.txt'
 f_syn = 'segmented_curves_syn_data_filtered.txt'
 
 ori_slopes = get_slope(f_ori,4)
-sny_slopes = get_slope(f_syn,4)
+syn_slopes = get_slope(f_syn,4)
 
-dist(ori_slopes,sny_slopes)
+ori_intervals = get_intervals(f_ori,4)
+syn_intervals = get_intervals(f_syn,4)
+
+dist(ori_slopes,syn_slopes,'angle','dist_angle.pdf')
+dist(ori_intervals,syn_intervals,'interval','dist_intervals.pdf')

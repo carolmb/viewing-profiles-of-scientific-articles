@@ -11,13 +11,20 @@ from collections import defaultdict
 from sklearn.decomposition import PCA
 import matplotlib.gridspec as gridspec
 from scatter import Score
-from clusters import get_average_curve
-from clusters import average_curve
 from read_file import select_original_breakpoints,read_artificial_breakpoints
 
 def get_data(source1,source2,n,preprocessed):
 	if preprocessed:
-		slopes_original,intervals_original = util.read_preprocessed_file(n,source1)
+		labels_slopes,labels_intervals = util.read_preprocessed_file(n,source1)
+		slopes_original = []
+		intervals_original = []
+		for slopes,intervals in zip(labels_slopes,labels_intervals):
+			if slopes_original == []:
+				slopes_original = slopes
+				intervals_original = intervals
+			else:
+				slopes_original = np.concatenate((slopes_original,slopes),axis=0)
+				intervals_original = np.concatenate((intervals_original,intervals),axis=0)
 	else:
 		slopes_original,intervals_original = select_original_breakpoints(n,source1)
 	
@@ -64,32 +71,6 @@ def plot_pca(y1,y2,xlabel,ylabel,filename):
 	# ax2.ax_joint.add_patch(rect)
 
 	plt.savefig(filename+'original_pca.pdf',bbox_inches='tight')
-
-def plot_zoom(artificial,original,ax):
-	artificial_comp = artificial
-	original_comp = original
-	# for (x,y),z in zip(y1,artificial):
-	# 	if x >= box1[0] and x <= box1[1] and y >= box1[2] and y <= box1[3]:
-	# 		artificial_comp.append(z)
-	# for (x,y),z in zip(y2,original):
-	# 	if x >= box2[0] and x <= box2[1] and y >= box2[2] and y <= box2[3]:
-	# 		original_comp.append(z)
-
-	artificial_comp = np.asarray(artificial_comp)
-	original_comp = np.asarray(original_comp)
-
-	artificial_average = get_average_curve(artificial_comp,5,0)
-	original_average = get_average_curve(original_comp,5,1)
-	average = [artificial_average,original_average]
-
-	colors = ['red','green']
-	legend = ['artificial','original']
-	#plt.figure(figsize=(3,3))
-	for x0,y0,s0,s1,k in average:
-		ax.errorbar(x0,y0,xerr=s0,yerr=s1,marker='o',color=colors[k],linestyle='-',alpha=0.9,label=legend[k])
-
-	plt.legend()
-	#plt.savefig(filename+'_original_artificial_comp2.pdf')
 
 def get_linspace(syn_trans,original_trans):
 	print('syn',syn_trans.shape,original_trans.shape)
@@ -170,7 +151,7 @@ def surface_test(syn,original,syn_trans,original_trans,filename,title,xlabel,yla
 	
 	total = sum(np.absolute(Z1-Z2))
 	print('total sum diff',total)
-	plt.title(total)
+	plt.title("$\\epsilon$ = %.2f"%total)
 	plt.tight_layout()
 
 	plt.savefig(filename+'diff_test.pdf')
@@ -230,7 +211,7 @@ def get_args_terminal():
 if __name__ == "__main__":
    
 	source1,source2,output,N,preprocessed = get_args_terminal()
-	print(preprocessed,source1,source2)
+	print(preprocessed,source1,source2,output)
 
 	artificial_data,original_data,all_data_norm,artificial_norm,original_norm = get_data(source1,source2,N,preprocessed)
 

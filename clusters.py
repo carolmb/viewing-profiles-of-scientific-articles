@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python
-
+import util
+import sys,getopt
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -13,7 +14,6 @@ from collections import defaultdict
 from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D
 from read_file import select_original_breakpoints
-from sklearn.cluster import AgglomerativeClustering
 from scipy.cluster.hierarchy import dendrogram,linkage,cut_tree
 
 def multivariateGrid(col_x, col_y, col_k, df, xlabel,ylabel,k_is_color=False, scatter_alpha=.5):
@@ -60,18 +60,7 @@ def multivariateGrid(col_x, col_y, col_k, df, xlabel,ylabel,k_is_color=False, sc
 
     g.ax_joint.set_xlabel(xlabel,fontsize=18)
     g.ax_joint.set_ylabel(ylabel,fontsize=18)
-    # Do also global Hist:
-    # sns.distplot(
-    #     df[col_x].values,
-    #     ax=g.ax_marg_x,
-    #     color='grey'
-    # )
-    # sns.distplot(
-    #     df[col_y].values.ravel(),
-    #     ax=g.ax_marg_y,
-    #     color='grey',
-    #     vertical=True
-    # )
+
 
 def plot_pca(X,labels,colors,filename):
     pca = PCA(n_components=3)
@@ -100,115 +89,48 @@ def norm(data):
     std = np.std(data,axis=0)
     return (data-m)/std
 
-def get_average_curve(values,n,k):
-    means = np.mean(values,axis=0)
-    degrees = means[:n]
-    stds_degrees = np.std(values,axis=0)[:n]
-    
-    breaks = means[n:]
-    stds_breaks = np.std(values,axis=0)[n:]
-    
-    ys_stds = [0]
-    y0_values = values[:,0]*(values[:,n+0]*0.0174533)
-    ys_stds.append(np.std(y0_values))
-    for i in range(1,n):
-        y1_values = y0_values + values[:,i]*(values[:,n+i]*0.0174533)
-        ys_stds.append(np.std(y1_values))
-        y0_values = y1_values
-
-    x0 = [0]
-    y0 = [0]
-    b0 = 0
-    s0_breaks = [0]
-
-    for d,b,s1 in zip(degrees,breaks,stds_breaks):
-        tan = np.tan(d*0.0174533)
-        b0 += b
-        x0.append(b0)
-        y0.append(y0[-1]+b*tan)
-        s0_breaks.append(s1)
-    print('x0',x0,'\ny0',y0,'\nstds_breaks',s0_breaks,'\nys_stds',ys_stds)
-    average = (x0,y0,s0_breaks,ys_stds,k)
-    return average
-
-def average_curve(data,labels):
-    n = data.shape[1]//2
-
-    print(n,data.shape)
-
-    group_by = defaultdict(lambda:[])
-    for sample,label in zip(data,labels):
-        group_by[label].append(sample)
-
-    average = []
-    
-    for k,values in group_by.items():
-        values = np.asarray(values)
-        
-        average.append(get_average_curve(values,n,k))
-    average.append(get_average_curve(data,n,-1))
-    return average
-
-def eigsorted(cov):
-    vals, vecs = np.linalg.eigh(cov)
-    order = vals.argsort()[::-1]
-    return vals[order], vecs[:,order]
-
-def average_curve_point(data,labels):
+def average_curve_point(data):
 
     n = data.shape[1]//2
 
-    print(n,data.shape)
+    mtx_inter = np.zeros((len(data),100),dtype=np.float)
+    for idx_j,sample in enumerate(data):
+        degrees = sample[:n]
+        intervals = sample[n:]
+        cumsum = np.cumsum(intervals)
+        for idx_i,i in enumerate(np.linspace(0,1,100)):
+            y = 0
+            last_delta_x = cumsum[0]
+            for degree,cum_x,delta_x in zip(degrees,cumsum,intervals):
+                tan_x = np.tan(degree*np.pi/180)
+                if i < cum_x:
+                    x = i - last_delta_x
+                    y += x*tan_x
+                    break
+                y += delta_x*tan_x
+                last_delta_x = cum_x
+            mtx_inter[idx_j][idx_i] = y
 
-    group_by = defaultdict(lambda:[])
-    for sample,label in zip(data,labels):
-        group_by[label].append(sample)
+    mean = np.mean(mtx_inter,axis=0)
+    std = np.std(mtx_inter,axis=0)
 
-    average = []
-    
-    for k,values in group_by.items():
-        values = np.asarray(values)
-        
-        mtx_inter = np.zeros((len(values),100),dtype=np.float)
-        for idx_j,sample in enumerate(values):
-            degrees = sample[:n]
-            intervals = sample[n:]
-            cumsum = np.cumsum(intervals)
-            for idx_i,i in enumerate(np.linspace(0,1,100)):
-                y = 0
-                last_delta_x = cumsum[0]
-                for degree,cum_x,delta_x in zip(degrees,cumsum,intervals):
-                    tan_x = np.tan(degree*np.pi/180)
-                    if i < cum_x:
-                        x = i - last_delta_x
-                        y += x*tan_x
-                        break
-                    y += delta_x*tan_x
-                    last_delta_x = cum_x
-                mtx_inter[idx_j][idx_i] = y
+    output = (np.linspace(0,1,100),mean,np.zeros(100),np.zeros(100))
 
-        mean = np.mean(mtx_inter,axis=0)
-        std = np.std(mtx_inter,axis=0)
+    return output
 
-        print(mean.shape,std.shape)
-        average.append((np.linspace(0,1,100),mean,np.zeros(100),std,k))
-
-    return average
-
-def plot_clusters(data,labels,colors,filename):
-    average = average_curve_point(data,labels) # ao invés de average_curve(data,labels)
+def plot_clusters(plots,output):
 
     plt.figure(figsize=(6,3))
-    for x0,y0,s0,s1,k in average:
-        print(k,colors[k])
+    for color,(x0,y0,s0,s1) in plots.items():
+        print(color)
         print(x0.shape,y0.shape,s0.shape,s1.shape)
-        plt.errorbar(x0,y0,xerr=s0,yerr=s1,marker='o',markersize=0.7,color=colors[k],linestyle='-',alpha=0.7)
+        plt.errorbar(x0,y0,xerr=s0,yerr=s1,marker='o',markersize=0.7,color=color,linestyle='-',alpha=0.7)
     
     plt.xlabel('time',fontsize=16)
     plt.ylabel('views',fontsize=16)
     plt.tight_layout()
-    print(filename)
-    plt.savefig(filename)
+    print(output)
+    plt.savefig(output)
     plt.clf()
 
 def get_labels_clustering_hier(X,kclusters,ktotal):
@@ -233,35 +155,55 @@ def save_groups(labels,data,output):
     
     np.savetxt(output+'curves_label.txt',data,delimiter=' ',fmt='%.18e')
 
-def plot_groups(get_labels,alg_name,output):
+def generate_groups(get_labels):
     for ktotal in [2,3,4,5]:
-        slopes,intervals = select_original_breakpoints(ktotal,'r_code/segmented_curves_filtered.txt')
+        slopes,intervals = select_original_breakpoints(ktotal,'segm/segmented_curves_filtered.txt')
         data = np.concatenate((slopes,intervals),axis=1)
-        X = norm(data)
-        print(ktotal,len(X))
         
         labels = get_labels(data,3,ktotal)
         save_groups(labels,data,'k'+str(ktotal)+'_')
         
-        #plot_pca(X,labels,colors,'imgs/pca_%s_%d'%(alg_name,ktotal))
-        #plot_clusters(data,labels,colors,output+str(ktotal)+'.pdf')
-
+        
 colors = ['tab:red','tab:blue','tab:orange','tab:green','tab:grey']
 
+def read_args():
+    argv = sys.argv[1:]
+    
+    op1,op2,op3 = False,False,False
+    try:
+        opts,args = getopt.getopt(argv,"",['op1','op2','op3'])
+    except getopt.GetoptError:
+        print('usage: python example.py --op1 --op2 --op3')
+        return None
+
+    for opt,arg in opts:
+
+        if opt == '--op1':
+            op1 = True
+        if opt == '--op2':
+            op2 = True
+        if opt == '--op3':
+            op3 = True
+
+    return op1,op2,op3
+
 if __name__ =='__main__': 
-    output = ''
-    plot_groups(get_labels_clustering_hier,'hierar',output)
+    op1,op2,op3 = read_args()
+    print(op1,op2,op3)
 
-# plot_groups(get_labels_ksc,'ksc')
-
-# pca usando todos os dados OK
-# clusters usando todo os dados
-# sinais aleatórios para comparar os originais OK
-# angulos diferentes e intervalos probabilisticos OK
-# visualizar intervalos 1 e 3 OK
-
-# TODO
-# encontrar o centro
-# a curva média de cada conjunto (usar os labels)
-# testar outras medidas
-
+    if op1:
+        generate_groups(get_labels_clustering_hier)
+    if op2:
+        X = norm(data)
+        plot_pca(X,labels,colors,'imgs/pca_%s_%d'%(alg_name,ktotal))
+    if op3:
+        source = 'k5/k5_curves_label.txt'
+        labels_slopes,labels_intervals = util.read_preprocessed_file(3,source)
+        output = 'k5/average_curves_label_k5.pdf'    
+        plots = dict()
+        for label,(slopes,intervals) in enumerate(zip(labels_slopes,labels_intervals)):
+            data = np.concatenate((slopes,intervals),axis=1)
+            average = average_curve_point(data)
+            plots[colors[label]] = average
+        
+        plot_clusters(plots,output)

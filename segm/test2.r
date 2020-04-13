@@ -19,16 +19,6 @@ for (i in seq(1,length(linn),by=3)){
   doi<-linn[i]
   months<-as.numeric(strsplit(linn[i+1],',')[[1]])
   views<-as.numeric(strsplit(linn[i+2],',')[[1]])
-  if (data_index == 139 || data_index == 140 || data_index == 141) {
-  	print(months)
-  	print(length(months))
-  	print(views)
-  	print(length(views))
-  	pdf(paste(data_index,'.pdf'))
-	plot(months,views)
-	#lines(months,views)
-	dev.off()
-  }
   data[[data_index]]<-list(doi=doi,months=months,views=views)
   data_index <- data_index + 1
 }
@@ -55,18 +45,21 @@ get_segmented <- function(dati,doi,itmax,k,stopiferror,nboot,yy,i,xx) {
 			print(xx)
 			breakpoints<-o$psi[,2]
 			print(breakpoints)
+			print(sprintf("%f", y.mse))
 			plot(o, conf.level=0.95, shade=TRUE)
 			points(xx,yy, link=TRUE, col=2)
 		 } else {
-			print('deu bom')
-		 	print(doi)
-		 	print(pred.seg)
-			print(yy)
-			print(xx)
-			breakpoints<-o$psi[,2]
-			print(breakpoints)
-			plot(o, conf.level=0.95, shade=TRUE)
-			points(xx,yy, link=TRUE, col=2)
+			# print('deu bom')
+		 # 	print(doi)
+		 # 	print(pred.seg)
+			# print(yy)
+			# print(xx)
+			# breakpoints<-o$psi[,2]
+			# print(breakpoints)
+			# print(sprintf("%f", y.mse))
+
+			# plot(o, conf.level=0.95, shade=TRUE)
+			# points(xx,yy, link=TRUE, col=2)
 			
 		}
 
@@ -95,9 +88,9 @@ tests <- function(itmax,k,stopiferror) {
 	vector.mse <- c()
 	vector.p.value <- c()
 
-	idxs <- c(16,78,127,144,169,174,183,188)
+	idxs <- c(188,189)
 	# for (i in idxs) {
-	for (i in seq(100)) {
+	for (i in idxs) {
 		xx<-data[[i]]$months[2:length(data[[i]]$months)]
 		yy<-data[[i]]$views[2:length(data[[i]]$views)]
 
