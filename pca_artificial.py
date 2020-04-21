@@ -10,7 +10,6 @@ from scipy import stats
 from collections import defaultdict
 from sklearn.decomposition import PCA
 import matplotlib.gridspec as gridspec
-from scatter import Score
 from read_file import select_original_breakpoints,read_artificial_breakpoints
 
 def get_data(source1,source2,n,preprocessed):
@@ -126,7 +125,7 @@ def plot_pca_manual(xx,yy,Z,data,filename,title,xlabel,ylabel,cmap,color):
 	fig.colorbar(CS, cax=cax, orientation='vertical')
 	plt.savefig('imgs/'+filename+title+'_original_pca2.pdf')
 
-def surface_test(syn,original,syn_trans,original_trans,filename,title,xlabel,ylabel):
+def surface_test(syn,original,syn_trans,original_trans,filename,xlabel,ylabel):
 	N = len(syn_trans)
 	data,xx,yy = get_linspace(syn_trans,original_trans)
 
@@ -160,12 +159,6 @@ def get_pca_infos(all_data_norm,artificial_norm,original_norm):
 	pca = PCA(n_components=2)
 	pca.fit(all_data_norm)
 
-	scatter_dist = -1000
-	try:
-		scatter_dist = Score(all_data_norm,np.array([len(original_norm),len(artificial_norm)]))
-	except:
-		pass
-
 	y1 = pca.transform(artificial_norm)
 	y2 = pca.transform(original_norm)
 
@@ -173,12 +166,10 @@ def get_pca_infos(all_data_norm,artificial_norm,original_norm):
 	y1_explained = y1_explained*100
 	y2_explained = y2_explained*100
 
-	title = "\nscatter dist = %.6f" % scatter_dist
-
 	y1_label = 'PCA1 (%.2f%%)' % y1_explained
 	y2_label = 'PCA2 (%.2f%%)' % y2_explained
 
-	return y1,y2,y1_label,y2_label,title
+	return y1,y2,y1_label,y2_label
 
 def get_args_terminal():
     argv = sys.argv[1:]
@@ -215,10 +206,8 @@ if __name__ == "__main__":
 
 	artificial_data,original_data,all_data_norm,artificial_norm,original_norm = get_data(source1,source2,N,preprocessed)
 
-	y1,y2,y1_label,y2_label,title = get_pca_infos(all_data_norm,artificial_norm,original_norm)
-	surface_test(artificial_data,original_data,y1,y2,output,title,y1_label,y2_label)
-
-	print(title)
+	y1,y2,y1_label,y2_label = get_pca_infos(all_data_norm,artificial_norm,original_norm)
+	surface_test(artificial_data,original_data,y1,y2,output,y1_label,y2_label)
 	plot_pca(y1,y2,y1_label,y2_label,output)
 
 '''
