@@ -21,7 +21,7 @@ def merge_jsons(filenames):
     return merged_json
 
 
-def preprocess_time_serie(views):
+def preprocess_time_series(views):
     xml_total = 0
     pdf_total = 0
     html_total = 0
@@ -57,7 +57,7 @@ def my_filter(merged_json):
         if doi != '':
             try:
                 views = merged_json[doi]['views']
-                filtered_jsons[doi] = {'time_series': preprocess_time_serie(views), 'infos': wosArticles[i]}
+                filtered_jsons[doi] = {'time_series': preprocess_time_series(views), 'infos': wosArticles[i]}
 
                 c += 1
             except:
@@ -79,31 +79,13 @@ def save(data, filename):
         json.dump(data, f)
 
 
-def format2work(merged_jsons, filename):
-    output = open(filename, 'w')
-
-    for doi, item in merged_jsons.items():
-        # print(item)
-        output.write(doi + '\n')
-        output.write(','.join(item['time_series']['months']) + '\n')
-        output.write(','.join(item['time_series']['views']) + '\n')
-
-    output.close()
-
-
 if __name__ == '__main__':
-    # primeiro junta todos os .json com pedaços da base
+    # merge json chunks
     filenames = glob.glob('papers_time_series/*2.json')
     merged_jsons = merge_jsons(filenames)
     save(merged_jsons, 'papers_plos_data_time_series2_no_filter_xml_pdf_html.json')  # downloads and views separated
 
-    # filtra os dados
+    # remove papers with invalid doi
     merged_jsons = load('papers_plos_data_time_series2_no_filter_xml_pdf_html.json')
     merged_jsons = my_filter(merged_jsons)
     save(merged_jsons, 'papers_plos_data_time_series2_filtered_xml_pdf_html.json')
-
-    # merged_jsons = load('papers_plos_data_time_series2_filtered.json')
-    # format2work(merged_jsons,'plos_one_2019.txt')
-
-    # wosArticles = WOSGetter.GZJSONLoad("wosPlosOne2016_citations.json.gz")
-

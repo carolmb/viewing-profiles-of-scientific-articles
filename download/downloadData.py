@@ -1,8 +1,8 @@
+import sys
+import json
+import traceback
 import WOSGetter
 import multiprocessing
-import json
-import sys
-import traceback
 
 import urllib
 import os.path
@@ -27,33 +27,33 @@ def dorequest(url, cj=None, data=None, timeout=10, encoding='UTF-8'):
 
 
 def getURL(url):
-    k = 0;
-    theContents = None;
-    while ((theContents is None) and k < requestTrials):
-        k += 1;
+    k = 0
+    theContents = None
+    while (theContents is None) and k < requestTrials:
+        k += 1
         try:
             theContents = dorequest(url, timeout=connectionTimeout).decode("utf-8-sig")
         except urllib.error.URLError as e:
-            theContents = None;
+            theContents = None
             if (errorVerbose):
-                sys.stdout.write("\n##" + ("=" * 40) + "\n");
-                sys.stdout.write("##%r (%s) url = %s\n" % (e, str(sys.exc_info()[0]), url));
-                traceback.print_exc(file=sys.stdout);
-                sys.stdout.write("\n##" + ("=" * 40) + "\n");
-                sys.stdout.flush();
+                sys.stdout.write("\n##" + ("=" * 40) + "\n")
+                sys.stdout.write("##%r (%s) url = %s\n" % (e, str(sys.exc_info()[0]), url))
+                traceback.print_exc(file=sys.stdout)
+                sys.stdout.write("\n##" + ("=" * 40) + "\n")
+                sys.stdout.flush()
         except:
-            theContents = None;
-            if (errorVerbose):
-                sys.stdout.write("\n##" + ("=" * 40) + "\n");
+            theContents = None
+            if errorVerbose:
+                sys.stdout.write("\n##" + ("=" * 40) + "\n")
                 sys.stdout.write(
                     "##A general exception occurred (%s). Could not process URL: %s\n" % (str(sys.exc_info()[0]), url));
-                traceback.print_exc(file=sys.stdout);
-                sys.stdout.write("\n##" + ("=" * 40) + "\n");
-                sys.stdout.flush();
-    if (theContents is None):
+                traceback.print_exc(file=sys.stdout)
+                sys.stdout.write("\n##" + ("=" * 40) + "\n")
+                sys.stdout.flush()
+    if theContents is None:
         sys.stdout.write("\n!!WARNING: m trials reached. Could not process URL: %s\n" % url);
-        sys.stdout.flush();
-    return theContents;
+        sys.stdout.flush()
+    return theContents
 
 
 def processInput(doi):
@@ -62,12 +62,12 @@ def processInput(doi):
     # with counter_lock:
     # 	counter.value += 1;
     # doi = DOIURL;#'10.1371/journal.pone.0073791';
-    if (len(doi) > 0):
-        data = getURL('http://alm.plos.org/api/v5/articles?api_key=3pezRBRXdyzYW6ztfwft&ids=' + urllib.parse.quote(doi,
-                                                                                                                   safe='') + '&info=detail');
-        return data;
+    if len(doi) > 0:
+        data = getURL('http://alm.plos.org/api/v5/articles?api_key=3pezRBRXdyzYW6ztfwft&ids='
+                      + urllib.parse.quote(doi, safe='') + '&info=detail')
+        return data
     else:
-        return None;
+        return None
 
 
 def save(data, filename):
@@ -82,12 +82,9 @@ def load(filename):
     return data
 
 
-def get_papers(i_DOIs):
+def get_papers(doi):
 
-    doi_json = dict()
-
-    data = processInput(i_DOIs)
-    json_data = None
+    data = processInput(doi)
     selected = dict()
 
     try:
@@ -97,22 +94,15 @@ def get_papers(i_DOIs):
         selected[current['id']] = {}
 
         for a in current['sources']:
-
-            if a['name'] == 'scopus':
-                selected[current['id']] = a['events']['citedby-count']
-        # if a['name'] == 'counter':
-        # 	selected[current['id']]['views'] = a['events']
-        # if a['name'] == 'twitter':
-        # 	selected[current['id']]['twitter'] = {'freq':a['by_month'],'elements':a['events']}
+            if a['name'] == 'counter':
+                selected[current['id']]['views'] = a['events']
+            if a['name'] == 'twitter':
+                selected[current['id']]['twitter'] = {'freq': a['by_month'], 'elements': a['events']}
 
     except:
-        json_data = None
+        pass
 
-    if json_data is not None:
-        # doi_json[doi] = selected
-        return selected
-
-    # save(doi_json, 'papers_time_series/papers_time_series' + str(head) + '_scopus_count_2.json')
+    return selected
 
 
 if __name__ == '__main__':
@@ -125,16 +115,12 @@ if __name__ == '__main__':
 
     cookie_file = os.path.abspath('./cookies.txt')
 
-
-
     # what are your inputs, and what operation do you want to
     # perform on each input. For example...
-    DOIs = [article["DI"] for article in wosArticles];
+    DOIs = [article["DI"] for article in wosArticles]
     del wosArticles
 
     n = 20000
-    # chuncks = [(i,DOIs[i:i + n]) for i in range(0, len(DOIs), n)]
-
     pool = multiprocessing.Pool(6)
     results = pool.map(get_papers, DOIs, chunksize=n)
-    save(results, 'papers_time_series/papers_time_series_scopus_count_2.json')
+    save(results, 'papers_time_series/papers_time_series.json')
