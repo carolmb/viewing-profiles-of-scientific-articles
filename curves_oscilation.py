@@ -46,7 +46,7 @@ def plot_ave_curve(slopes, intervals, filename, color):
     plt.plot(x, y, 'o', ls='-', label='%s (%.2f%%)' % (curve_descr, 100 * B[j]/total), alpha=0.7, c=color)
 
     plt.legend()
-    plt.xlabel('Time')
+    plt.xlabel('Normalized time')
     plt.ylabel('Views')
 
     plt.tight_layout()
@@ -61,31 +61,31 @@ if __name__ == '__main__':
     letters = ['a', 'b', 'c', 'd', 'e', 'f']
     idx = 0
 
-    # for N, source in zip([3, 5], sources):
-    #     labels = np.loadtxt(source, dtype=np.int)
-    #     slopes, intervals = select_original_breakpoints(N, 'segm/segmented_curves_filtered.txt')
-    #     unique, counts = np.unique(labels, return_counts=True)
-    #     unique = unique[counts >= 10]
-    #     counts = counts[counts >= 10]
-    #     unique_idxs = np.argsort(counts)[-3:]
-    #     unique = unique[unique_idxs].tolist()
-    #     # labels = [unique.index(l) if l in unique else -1 for l in labels]
-    #
-    #     for i, label in enumerate(unique):
-    #         idxs = labels == label
-    #         slopes_i = slopes[idxs]
-    #         intervals_i = intervals[idxs]
-    #
-    #         print(label, '-> tamanho', len(slopes_i))
-    #         filename = 'ave_curve_%d_intervals_%s.pdf' % (N, letters[idx])
-    #         plot_ave_curve(slopes_i, intervals_i, filename, colors[i])
-    #         idx += 1
-    #
-    for N in [3, 5]:
+    for N, source in zip([3, 5], sources):
+        labels = np.loadtxt(source, dtype=np.int)
         slopes, intervals = select_original_breakpoints(N, 'segm/segmented_curves_filtered.txt')
+        unique, counts = np.unique(labels, return_counts=True)
+        unique = unique[counts >= 10]
+        counts = counts[counts >= 10]
+        unique_idxs = np.argsort(counts)[-3:]
+        unique = unique[unique_idxs].tolist()
+        # labels = [unique.index(l) if l in unique else -1 for l in labels]
 
-        filename = 'ave_curve_%d_intervals.pdf' % N
-        plot_ave_curve(slopes, intervals, filename, 'gray')
+        for i, label in enumerate(unique):
+            idxs = labels == label
+            slopes_i = slopes[idxs]
+            intervals_i = intervals[idxs]
+
+            print(label, '-> tamanho', len(slopes_i))
+            filename = 'ave_curve_%d_intervals_%s.pdf' % (N, letters[idx])
+            plot_ave_curve(slopes_i, intervals_i, filename, colors[i])
+            idx += 1
+
+    # for N in [3, 5]:
+    #     slopes, intervals = select_original_breakpoints(N, 'segm/segmented_curves_filtered.txt')
+    #
+    #     filename = 'ave_curve_%d_intervals.pdf' % N
+    #     plot_ave_curve(slopes, intervals, filename, 'gray')
 
 
 # fig, ax = plt.subplots(figsize=(len(A), 10))
