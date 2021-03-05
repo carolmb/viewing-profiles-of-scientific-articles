@@ -232,7 +232,6 @@ def generate_comb_artificial_data(X, Y, prob, alpha_prob_next, l_prob_next, inte
         alphas = []
         ls = []
         i = 0
-
         while i < n:
             j += 1
             if i == 0:
@@ -243,7 +242,6 @@ def generate_comb_artificial_data(X, Y, prob, alpha_prob_next, l_prob_next, inte
                 l_idx = get_i([l], intervalsy)[0]
 
                 if not (alpha_idx, l_idx) in prob[i - 1]:
-
                     if j == 50:
                         print('j == 50')
                         print(alpha_idx)
@@ -280,6 +278,7 @@ def generate_comb_artificial_data(X, Y, prob, alpha_prob_next, l_prob_next, inte
             ls.append(l)
         all_alphas.append(alphas)
         all_ls.append(ls)
+
     return all_alphas, all_ls
 
 
@@ -294,7 +293,7 @@ def generate_artificial_data(all_slopes, all_intervals, n, intervalsx, intervals
         X, Y = generate_comb_artificial_data(slopes, intervals, prob, alpha_prob_next, l_prob_next, intervalsx,
                                              intervalsy, n, samples)
         models['markov1_multi'].append((X, Y))
-        # save(X,Y,folder+'markov1_multi_'+str(n)+'_gaussian_test.txt')    
+        # save(X,Y,folder+'markov1_multi_'+str(n)+'_gaussian_test.txt')
 
         print("No memory model")
         # SEM MEMÓRIA

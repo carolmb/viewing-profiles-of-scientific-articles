@@ -239,7 +239,6 @@ def get_args_terminal():
         return None
 
     for opt, arg in opts:
-
         if opt == '--s1':
             source1 = arg
         if opt == '--s2':
@@ -280,5 +279,4 @@ if __name__ == "__main__":
 '''
 # para todas as curvas com label: 
 python pca_artificial.py --s2 k3/markov1_uni_k3_label.txt -N 3 -o k3/
-
 '''

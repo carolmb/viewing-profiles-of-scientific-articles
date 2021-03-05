@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from read_file import select_original_breakpoints
 from collections import defaultdict
 
+
 if __name__ == '__main__':
     N = 5
     slopes, intervals = select_original_breakpoints(N, 'segm/segmented_curves_filtered.txt')

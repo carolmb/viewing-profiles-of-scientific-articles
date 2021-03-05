@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
-
 def plot_hist_int(X, Y, filename, xlabel, ylabel):
     plt.bar(X, height=Y, color='tab:blue', width=0.5)
     plt.locator_params(axis='x', integer=MaxNLocator(integer=True))

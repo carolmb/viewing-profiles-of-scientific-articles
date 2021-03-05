@@ -38,6 +38,7 @@ def multivariateGrid(col_x, col_y, col_k, df, xlabel, ylabel, k_is_color=False, 
         y=col_y,
         data=df
     )
+
     grey_rows = df[df[col_k] == 'tab:grey']
     legends = ['tab:grey']
     if k_is_color:
@@ -220,7 +221,6 @@ def get_dois(n, filename):
             dois.append(i)
     return dois
 
-
 def generate_groups(get_labels, f_input='segm/segmented_curves_filtered.txt', output=''):
     for cut_value, ktotal in [(0.7, 2), (0.35, 3), (0.4, 4), (0.56, 5)]:
         slopes, intervals = select_original_breakpoints(ktotal, f_input)
@@ -284,6 +284,7 @@ def read_preprocessed_file(N, source):
 
     labels_slopes = [np.asarray(values) for values in labels_slopes]
     labels_intervals = [np.asarray(values) for values in labels_intervals]
+
     return labels_slopes, labels_intervals
 
 

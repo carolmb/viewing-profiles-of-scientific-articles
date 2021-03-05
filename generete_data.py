@@ -6,7 +6,6 @@ from artificial_data import generate_artificial_data
 # from data_hist_heat import generate_hist_plots
 from read_file import select_original_breakpoints, save
 
-
 def norm(xs):
     mmax = max(xs)
     mmin = min(xs)

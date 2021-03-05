@@ -58,8 +58,6 @@ lê os arquivos gerados pelo pacote segmented R
 precisa de N para pegar apenas as séries com N intervalos
 retorna: os idxs das séries originais, slopes, breakpoints e as predições
 '''
-
-
 def read_original_breakpoints(filename, N):
     samples_breakpoints = open(filename, 'r').read().split('\n')[:-1]
     total_series = len(samples_breakpoints)

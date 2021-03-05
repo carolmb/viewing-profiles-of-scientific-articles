@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 
 from scipy.stats import pearsonr
 from collections import defaultdict
-
 from matplotlib.ticker import ScalarFormatter
 
 

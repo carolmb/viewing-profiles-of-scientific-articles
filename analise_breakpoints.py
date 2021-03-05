@@ -2,6 +2,7 @@
 import sys
 import getopt
 import numpy as np
+
 from artificial_data import generate_artificial_data
 
 
@@ -24,13 +25,13 @@ def get_args_terminal():
         print('usage: example.py -s <source> -o <output> -N <n>')
 
     for opt, arg in opts:
-
         if opt == '-s':
             source = arg
         elif opt == '-o':
             output = arg
         elif opt == '-N':
             N = arg
+
     return source, output, N
 
 
