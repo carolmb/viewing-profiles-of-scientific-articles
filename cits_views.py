@@ -212,7 +212,6 @@ if __name__ == '__main__':
         dois[len(sample[1])].append(sample)
 
     for segs in np.arange(2, 6):
-        print('numero de segmentos', segs)
         labels = np.loadtxt(sources[segs-2], dtype=np.int)
         unique, count = np.unique(labels, return_counts=True)
         unique = unique[count >= 10]

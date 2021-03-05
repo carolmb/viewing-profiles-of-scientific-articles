@@ -3,6 +3,7 @@ import getopt
 import numpy as np
 from read_file import select_original_breakpoints
 
+
 def read_preprocessed_file(N, source, labels_source):
     # original = np.loadtxt(source)
     # slopes = original[:, :N]
@@ -34,18 +35,18 @@ def read_preprocessed_file(N, source, labels_source):
 
 def get_args_terminal():
     argv = sys.argv[1:]
-    
+
     source = None
     output = None
     N = 5
     preprocessed = False
     try:
-        opts,args = getopt.getopt(argv,"s:o:N:p")
+        opts, args = getopt.getopt(argv, "s:o:N:p")
     except getopt.GetoptError:
         print('usage: python example.py -s <source> -o <output> -N <n> -p')
         return None
 
-    for opt,arg in opts:
+    for opt, arg in opts:
 
         if opt == '-s':
             source = arg
@@ -56,4 +57,4 @@ def get_args_terminal():
         elif opt == '-p':
             preprocessed = True
 
-    return source,output,N,preprocessed
+    return source, output, N, preprocessed

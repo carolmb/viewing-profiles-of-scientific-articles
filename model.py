@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import numpy as np
 import stasts
-import matplotlib.pyplot as plt
 
 from read_file import load_data
-from stasts import filter_outliers,group_by_num_visual
+from stasts import filter_outliers
 
 
 if __name__ == '__main__':
@@ -17,15 +15,6 @@ if __name__ == '__main__':
     stasts.plot_no_of_visual(data, 'views_v2')
     # stasts.plot_no_of_intervals(data,'segments')
 
-'''
-data_lQ2,data_geQ2 = group_by_num_visual(data)
-
-# data, is_norm, reverse, header
-plot_jumps(data_lQ2,False,True,'imgs/original1/jumps_reverse_lQ2/')
-plot_jumps(data_lQ2,False,False,'imgs/original1/jumps_lQ2/')
-plot_jumps(data_geQ2,False,True,'imgs/original1/jumps_reverse_geQ2/')
-plot_jumps(data_geQ2,False,False,'imgs/original1/jumps_geQ2/')
-'''
 
 # --------------------------------------------------------------------
 

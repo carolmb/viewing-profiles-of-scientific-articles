@@ -7,7 +7,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from scipy import stats
-from collections import defaultdict
 from sklearn.decomposition import PCA
 import matplotlib.gridspec as gridspec
 from matplotlib.ticker import MaxNLocator

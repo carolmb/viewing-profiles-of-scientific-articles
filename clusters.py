@@ -1,21 +1,20 @@
 # -*- coding: utf-8 -*-
 # !/usr/bin/env python
 
-import read_file
-import sys, getopt
-import numpy as np
-import pandas as pd
-
-import seaborn as sns
-
-import matplotlib.pyplot as plt
-
-from sklearn.decomposition import PCA
-from matplotlib.ticker import StrMethodFormatter
-from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
-from read_file import select_original_breakpoints, read_original_breakpoints
+import getopt
+import sys
 
 import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from matplotlib.ticker import StrMethodFormatter
+from scipy.cluster.hierarchy import linkage, fcluster
+from sklearn.decomposition import PCA
+
+import read_file
+from read_file import select_original_breakpoints, read_original_breakpoints
 
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42

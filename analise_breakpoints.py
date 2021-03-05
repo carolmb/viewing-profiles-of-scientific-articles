@@ -2,31 +2,28 @@
 import sys
 import getopt
 import numpy as np
-from collections import defaultdict
+from artificial_data import generate_artificial_data
 
-from data_freq_scatter import generate_freq_plots
-from artificial_data import generate_artificial_data,get_i
-# from data_hist_heat import generate_hist_plots
-from read_file import select_original_breakpoints
 
 def norm(xs):
     mmax = max(xs)
     mmin = min(xs)
 
-    return (xs-mmin)/(mmax-mmin)
+    return (xs - mmin) / (mmax - mmin)
+
 
 def get_args_terminal():
     argv = sys.argv[1:]
-    
+
     source = None
     output = None
     N = 5
     try:
-        opts,args = getopt.getopt(argv,"s:o:n:")
+        opts, args = getopt.getopt(argv, "s:o:n:")
     except getopt.GetoptError:
         print('usage: example.py -s <source> -o <output> -N <n>')
 
-    for opt,arg in opts:
+    for opt, arg in opts:
 
         if opt == '-s':
             source = arg
@@ -34,10 +31,10 @@ def get_args_terminal():
             output = arg
         elif opt == '-N':
             N = arg
-    return source,output,N
+    return source, output, N
+
 
 if __name__ == "__main__":
-
     source, output, N = get_args_terminal()
     print(source, output, N)
 
@@ -45,17 +42,17 @@ if __name__ == "__main__":
     ny = 10
 
     minx, maxx = 0, 90
-    deltax = (maxx-minx)/nx
-    intervalsx = np.arange(minx, maxx+deltax, deltax)
+    deltax = (maxx - minx) / nx
+    intervalsx = np.arange(minx, maxx + deltax, deltax)
 
     miny, maxy = 0, 1
-    deltay = (maxy-miny)/ny
-    intervalsy = np.arange(miny, maxy+deltay, deltay)
+    deltay = (maxy - miny) / ny
+    intervalsy = np.arange(miny, maxy + deltay, deltay)
 
     args = [intervalsx, intervalsy]
 
     # xs,ys = read_file_original(filename='data/plos_one_2019.txt')
     # xs = np.asarray([norm(x) for x in xs])
     # ys = np.asarray([norm(y) for y in ys])
-    
+
     generate_artificial_data(N, intervalsx, intervalsy, maxx, source, output)

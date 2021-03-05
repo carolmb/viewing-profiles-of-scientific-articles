@@ -104,4 +104,4 @@ def plot_lifetime_all_curves(freq):
 if __name__ == '__main__':
     freq_delta_t, freq_views = get_data_by_number_segm()
     # plot_lifetime_by_number_segm(freq_delta_t)
-    plot_lifetime_all_curves(freq_delta_t)
+    # plot_lifetime_all_curves(freq_delta_t)

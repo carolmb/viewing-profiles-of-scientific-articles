@@ -2,11 +2,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from scipy import stats
-
-# import numpy as np
-# import matplotlib.pyplot as plt
-# from matplotlib.gridspec import GridSpec
 from read_file import select_original_breakpoints
 
 

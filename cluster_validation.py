@@ -2,14 +2,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from clusters import get_dois
-from collections import defaultdict
 from sklearn.decomposition import PCA
-from mpl_toolkits.mplot3d import Axes3D
 from clusters import read_data_with_label, norm
 from read_file import select_original_breakpoints
-from sklearn.cluster import AgglomerativeClustering
-from sklearn.metrics import normalized_mutual_info_score
 from scipy.cluster.hierarchy import dendrogram, linkage, cut_tree, fcluster
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score, silhouette_samples
 

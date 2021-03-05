@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from collections import defaultdict
-
 from read_file import select_original_breakpoints
 
 

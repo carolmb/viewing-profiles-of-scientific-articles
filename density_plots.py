@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
 from matplotlib.ticker import StrMethodFormatter, ScalarFormatter
 from read_file import select_original_breakpoints
-from sklearn.utils.random import sample_without_replacement
 
 import matplotlib
 
