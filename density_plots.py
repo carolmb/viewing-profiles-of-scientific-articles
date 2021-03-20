@@ -59,9 +59,9 @@ def corr_density_plots(slopes, intervals, n, header):
         corr = pearsonr(x,y)[0]
         to_plot[(xlabel,ylabel,corr)] = data
         print(xlabel,ylabel,corr)
-    # xlim = (0,0.6)
-    # ylim = (0,0.6)
-    # plot_density(to_plot,xlim,ylim,'imgs/density_l_l_')
+    xlim = (0,0.6)
+    ylim = (0,0.6)
+    plot_density(to_plot,xlim,ylim,'imgs/density_l_l_')
 
     to_plot = dict()
     for i in range(n-1):
@@ -110,6 +110,7 @@ def corr_density_plots(slopes, intervals, n, header):
 
 
 '''
+# HTML VIEWS ONLY
 $\alpha_1$ $\alpha_2$ -0.16566577082009307
 $\alpha_2$ $\alpha_3$ -0.3899387155851549
 $\alpha_3$ $\alpha_4$ -0.3488593898057022
@@ -135,7 +136,7 @@ $l_5$ $\alpha_5$ 0.13710343658357016
 '''
 
 if __name__ == '__main__':
-    f_input = 'segm/segmented_curves_html.txt'
+    f_input = 'segm/segmented_curves_filtered.txt'
     slopes, intervals = select_original_breakpoints(5, f_input)
     corr_density_plots(slopes, intervals, 5, 'teste/density_')
     # generate_hist_plots(slopes,intervals,n,'imgs/original1/',args)
