@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(1, '../')
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -18,7 +20,7 @@ def plot_scatter_with_freq(X, Y, title, xlabel, ylabel, filename):
 
 
 if __name__ == '__main__':
-    f_input = 'segm/segmented_curves_html.txt'
+    f_input = '../segm/segmented_curves_filtered.txt'
     slopes, intervals = select_original_breakpoints(5, f_input)
 
     intervals1 = intervals[:, 0]
